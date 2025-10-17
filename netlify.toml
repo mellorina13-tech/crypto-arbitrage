@@ -2,9 +2,8 @@
   publish = "."
   functions = "netlify/functions"
 
-[functions]
-  # Pro plan allows up to 26 seconds timeout
-  timeout = 26
+[functions.timeout]
+  duration = 26
 
 [[redirects]]
   from = "/api/*"
