@@ -620,14 +620,16 @@
         // Fetch prices from all exchanges via Netlify Function (with batching for large requests)
         async function fetchExchangePrices(symbols) {
             const symbolList = Array.isArray(symbols) ? symbols : [symbols];
-            const BATCH_SIZE = 30; // Process 30 coins at a time (optimized for 10s timeout)
+            const BATCH_SIZE = 20; // Process 20 coins at a time to stay under 10s timeout
+            
+            console.log(`📊 Total symbols to fetch: ${symbolList.length}`);
             
             // If small request, send all at once
             if (symbolList.length <= BATCH_SIZE) {
                 const symbolString = symbolList.join(',');
                 
                 try {
-                    console.log(`🔍 Fetching prices for ${symbolList.length} coins...`);
+                    console.log(`🔍 Fetching ${symbolList.length} coins in single request...`);
                     
                     const response = await fetch(`${API_ENDPOINT}?symbols=${symbolString}`);
                     
@@ -653,7 +655,7 @@
             }
             
             // For large requests, batch them
-            console.log(`📦 Large request (${symbolList.length} coins) - batching into groups of ${BATCH_SIZE}`);
+            console.log(`📦 Large request! Batching ${symbolList.length} coins into groups of ${BATCH_SIZE}...`);
             
             const allResults = {};
             const batches = [];
@@ -663,18 +665,17 @@
                 batches.push(symbolList.slice(i, i + BATCH_SIZE));
             }
             
-            console.log(`📊 Processing ${batches.length} batches...`);
+            console.log(`📊 Created ${batches.length} batches`);
             
-            // Process each batch
+            // Process each batch sequentially
             for (let i = 0; i < batches.length; i++) {
                 const batch = batches[i];
                 const batchString = batch.join(',');
                 
-                updateApiStatus('loading', `Fetching batch ${i + 1}/${batches.length} (${batch.length} coins)...`);
+                updateApiStatus('loading', `Batch ${i + 1}/${batches.length}: Fetching ${batch.length} coins...`);
+                console.log(`🔍 Batch ${i + 1}/${batches.length}: Processing ${batch.length} coins`);
                 
                 try {
-                    console.log(`🔍 Batch ${i + 1}/${batches.length}: ${batch.length} coins`);
-                    
                     const response = await fetch(`${API_ENDPOINT}?symbols=${batchString}`);
                     
                     if (!response.ok) {
@@ -692,12 +693,13 @@
                     // Merge results
                     Object.assign(allResults, result.data);
                     
-                    console.log(`✅ Batch ${i + 1}/${batches.length} completed`);
+                    console.log(`✅ Batch ${i + 1}/${batches.length} completed - ${Object.keys(result.data).length} coins received`);
                     apiCallCount++;
                     
                     // Small delay between batches
                     if (i < batches.length - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 300));
+                        console.log(`⏳ Waiting 500ms before next batch...`);
+                        await new Promise(resolve => setTimeout(resolve, 500));
                     }
                     
                 } catch (error) {
@@ -705,7 +707,7 @@
                 }
             }
             
-            console.log(`✅ All batches completed - ${Object.keys(allResults).length} coins processed`);
+            console.log(`✅ All batches completed - total ${Object.keys(allResults).length}/${symbolList.length} coins processed`);
             
             return Object.keys(allResults).length > 0 ? allResults : null;
         }
