@@ -532,35 +532,22 @@
     </div>
 
     <script>
-        // CORS Proxy to bypass browser restrictions
-        const CORS_PROXY = 'https://corsproxy.io/?';
+        // Netlify Function API endpoint
+        const API_ENDPOINT = '/.netlify/functions/get-prices';
         
-        // Real Exchange APIs
-        const EXCHANGES = {
-            binance: {
-                name: 'Binance',
-                fee: 0.1,
-                apiUrl: 'https://api.binance.com/api/v3/ticker/price',
-                format: (symbol) => `${symbol}USDT`
-            },
-            kucoin: {
-                name: 'KuCoin',
-                fee: 0.1,
-                apiUrl: 'https://api.kucoin.com/api/v1/market/orderbook/level1',
-                format: (symbol) => `${symbol}-USDT`
-            },
-            gateio: {
-                name: 'Gate.io',
-                fee: 0.2,
-                apiUrl: 'https://api.gateio.ws/api/v4/spot/tickers',
-                format: (symbol) => `${symbol}_USDT`
-            },
-            mexc: {
-                name: 'MEXC',
-                fee: 0.2,
-                apiUrl: 'https://api.mexc.com/api/v3/ticker/price',
-                format: (symbol) => `${symbol}USDT`
-            }
+        // Exchange fee information (for profit calculation)
+        const EXCHANGE_FEES = {
+            binance: 0.1,
+            kucoin: 0.1,
+            gateio: 0.2,
+            mexc: 0.2
+        };
+
+        const EXCHANGE_NAMES = {
+            binance: 'Binance',
+            kucoin: 'KuCoin',
+            gateio: 'Gate.io',
+            mexc: 'MEXC'
         };
 
         const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
@@ -620,104 +607,34 @@
             }
         }
 
-        // Timeout wrapper for API calls
-        async function fetchWithTimeout(url, timeout = 5000) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), timeout);
+        // Fetch prices from all exchanges via Netlify Function
+        async function fetchExchangePrices(symbols) {
+            const symbolList = Array.isArray(symbols) ? symbols.join(',') : symbols;
             
             try {
-                // Use CORS proxy for browser requests
-                const proxyUrl = CORS_PROXY + encodeURIComponent(url);
-                const response = await fetch(proxyUrl, { signal: controller.signal });
-                clearTimeout(timeoutId);
-                return response;
-            } catch (error) {
-                clearTimeout(timeoutId);
-                throw error;
-            }
-        }
-
-        // Fetch real price from Binance
-        async function fetchBinancePrice(symbol) {
-            try {
-                const pair = EXCHANGES.binance.format(symbol);
-                const response = await fetchWithTimeout(`${EXCHANGES.binance.apiUrl}?symbol=${pair}`, 2000);
-                if (!response.ok) return null;
+                console.log(`🔍 Fetching prices for: ${symbolList}`);
                 
-                const data = await response.json();
-                return parseFloat(data.price);
+                const response = await fetch(`${API_ENDPOINT}?symbols=${symbolList}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || 'Unknown error');
+                }
+                
+                console.log('✅ Received prices from backend');
+                apiCallCount++;
+                
+                return result.data;
+                
             } catch (error) {
+                console.error('❌ Backend API error:', error);
                 return null;
             }
-        }
-
-        // Fetch real price from KuCoin
-        async function fetchKucoinPrice(symbol) {
-            try {
-                const pair = EXCHANGES.kucoin.format(symbol);
-                const response = await fetchWithTimeout(`${EXCHANGES.kucoin.apiUrl}?symbol=${pair}`, 2000);
-                if (!response.ok) return null;
-                
-                const data = await response.json();
-                if (data.code !== '200000') return null;
-                
-                return parseFloat(data.data.price);
-            } catch (error) {
-                return null;
-            }
-        }
-
-        // Fetch real price from Gate.io
-        async function fetchGateioPrice(symbol) {
-            try {
-                const pair = EXCHANGES.gateio.format(symbol);
-                const response = await fetchWithTimeout(`${EXCHANGES.gateio.apiUrl}?currency_pair=${pair}`, 2000);
-                if (!response.ok) return null;
-                
-                const data = await response.json();
-                if (!data || data.length === 0) return null;
-                
-                return parseFloat(data[0].last);
-            } catch (error) {
-                return null;
-            }
-        }
-
-        // Fetch real price from MEXC
-        async function fetchMexcPrice(symbol) {
-            try {
-                const pair = EXCHANGES.mexc.format(symbol);
-                const response = await fetchWithTimeout(`${EXCHANGES.mexc.apiUrl}?symbol=${pair}`, 2000);
-                if (!response.ok) return null;
-                
-                const data = await response.json();
-                if (!data.price) return null;
-                
-                return parseFloat(data.price);
-            } catch (error) {
-                return null;
-            }
-        }
-
-        // Fetch prices from all exchanges for a coin
-        async function fetchExchangePrices(symbol) {
-            console.log(`🔍 Fetching ${symbol} from all exchanges...`);
-            
-            const prices = await Promise.all([
-                fetchBinancePrice(symbol),
-                fetchKucoinPrice(symbol),
-                fetchGateioPrice(symbol),
-                fetchMexcPrice(symbol)
-            ]);
-
-            apiCallCount += 4;
-
-            return {
-                binance: prices[0],
-                kucoin: prices[1],
-                gateio: prices[2],
-                mexc: prices[3]
-            };
         }
 
         // Find real arbitrage opportunities
@@ -730,23 +647,37 @@
                 coin.volume_24h >= minVolume
             );
 
-            console.log(`💰 Scanning ${eligibleCoins.length} eligible coins in parallel...`);
+            console.log(`💰 Scanning ${eligibleCoins.length} eligible coins...`);
 
-            // Process all coins in parallel for speed
-            const results = await Promise.all(eligibleCoins.map(async (coin) => {
-                updateApiStatus('loading', `Scanning ${coin.symbol}...`);
+            // Fetch all prices in one API call (batch request)
+            updateApiStatus('loading', `Fetching prices from exchanges...`);
+            const symbols = eligibleCoins.map(coin => coin.symbol);
+            const allPrices = await fetchExchangePrices(symbols);
+
+            if (!allPrices) {
+                console.error('❌ Failed to fetch prices from backend');
+                return [];
+            }
+
+            // Analyze each coin for arbitrage opportunities
+            for (const coin of eligibleCoins) {
+                const exchangePrices = allPrices[coin.symbol];
                 
-                const exchangePrices = await fetchExchangePrices(coin.symbol);
+                if (!exchangePrices) {
+                    console.log(`⚠️ ${coin.symbol}: No data received`);
+                    continue;
+                }
+
                 coin.exchangePrices = exchangePrices;
 
                 // Filter out null prices
                 const validPrices = Object.entries(exchangePrices)
-                    .filter(([exchange, price]) => price !== null)
+                    .filter(([exchange, price]) => price !== null && exchange !== 'timestamp')
                     .map(([exchange, price]) => ({ exchange, price }));
 
                 if (validPrices.length < 2) {
                     console.log(`⚠️ ${coin.symbol}: Not enough exchanges (${validPrices.length})`);
-                    return null;
+                    continue;
                 }
 
                 // Find lowest and highest prices
@@ -760,8 +691,8 @@
                 const grossSpreadPercent = ((sellPrice - buyPrice) / buyPrice) * 100;
 
                 // Calculate fees
-                const buyFee = EXCHANGES[buyExchange.exchange].fee;
-                const sellFee = EXCHANGES[sellExchange.exchange].fee;
+                const buyFee = EXCHANGE_FEES[buyExchange.exchange];
+                const sellFee = EXCHANGE_FEES[sellExchange.exchange];
                 const totalFees = buyFee + sellFee;
 
                 // Net spread after fees
@@ -771,10 +702,10 @@
 
                 if (netSpread >= minSpread) {
                     console.log(`✅ OPPORTUNITY: ${coin.symbol} +${netSpread.toFixed(2)}%`);
-                    return {
+                    opportunities.push({
                         coin: coin,
-                        buyExchange: EXCHANGES[buyExchange.exchange].name,
-                        sellExchange: EXCHANGES[sellExchange.exchange].name,
+                        buyExchange: EXCHANGE_NAMES[buyExchange.exchange],
+                        sellExchange: EXCHANGE_NAMES[sellExchange.exchange],
                         buyPrice: buyPrice,
                         sellPrice: sellPrice,
                         grossSpread: grossSpreadPercent.toFixed(2),
@@ -782,16 +713,11 @@
                         totalFees: totalFees.toFixed(2),
                         confidence: validPrices.length >= 3 ? 95 : 85,
                         lastUpdated: Date.now()
-                    };
+                    });
                 }
+            }
 
-                return null;
-            }));
-
-            // Filter out nulls and sort by net spread
-            return results
-                .filter(opp => opp !== null)
-                .sort((a, b) => parseFloat(b.netSpread) - parseFloat(a.netSpread));
+            return opportunities.sort((a, b) => parseFloat(b.netSpread) - parseFloat(a.netSpread));
         }
 
         async function scanMarkets() {
@@ -805,8 +731,8 @@
                 <div class="loading">
                     <div class="spinner"></div>
                     <h3>Fetching Real Market Data</h3>
-                    <p>Getting live prices from Binance, KuCoin, Gate.io, and MEXC...</p>
-                    <p style="margin-top: 10px; color: #ffc107;">⏳ This takes 10-20 seconds...</p>
+                    <p>Getting live prices from Binance, KuCoin, Gate.io, and MEXC via backend...</p>
+                    <p style="margin-top: 10px; color: #4caf50;">⚡ No CORS issues - using serverless backend!</p>
                 </div>
             `;
 
@@ -972,8 +898,9 @@
 
         // Auto-initialization removed - user must click "Scan Live Markets" button
         
-        console.log('📱 Crypto Arbitrage Scanner loaded - using REAL exchange APIs');
+        console.log('📱 Crypto Arbitrage Scanner loaded - using Backend API (Netlify Functions)');
         console.log('⚡ Click "Scan Live Markets" to start scanning');
+        console.log('🚀 No CORS issues - all exchange requests go through serverless backend');
     </script>
 
     <!-- Footer -->
