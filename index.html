@@ -502,9 +502,9 @@
                 <div class="control-group">
                     <label for="coinLimit">Coins to Scan</label>
                     <select id="coinLimit">
-                        <option value="10" selected>Top 10</option>
-                        <option value="20">Top 20</option>
-                        <option value="30">Top 30</option>
+                        <option value="5" selected>Top 5 (Fast)</option>
+                        <option value="10">Top 10</option>
+                        <option value="15">Top 15</option>
                     </select>
                 </div>
                 <div class="control-group">
@@ -617,17 +617,31 @@
             }
         }
 
+        // Timeout wrapper for API calls
+        async function fetchWithTimeout(url, timeout = 3000) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+            
+            try {
+                const response = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                return response;
+            } catch (error) {
+                clearTimeout(timeoutId);
+                throw error;
+            }
+        }
+
         // Fetch real price from Binance
         async function fetchBinancePrice(symbol) {
             try {
                 const pair = EXCHANGES.binance.format(symbol);
-                const response = await fetch(`${EXCHANGES.binance.apiUrl}?symbol=${pair}`);
+                const response = await fetchWithTimeout(`${EXCHANGES.binance.apiUrl}?symbol=${pair}`, 2000);
                 if (!response.ok) return null;
                 
                 const data = await response.json();
                 return parseFloat(data.price);
             } catch (error) {
-                console.log(`⚠️ Binance: ${symbol} not found`);
                 return null;
             }
         }
@@ -636,7 +650,7 @@
         async function fetchKucoinPrice(symbol) {
             try {
                 const pair = EXCHANGES.kucoin.format(symbol);
-                const response = await fetch(`${EXCHANGES.kucoin.apiUrl}?symbol=${pair}`);
+                const response = await fetchWithTimeout(`${EXCHANGES.kucoin.apiUrl}?symbol=${pair}`, 2000);
                 if (!response.ok) return null;
                 
                 const data = await response.json();
@@ -644,7 +658,6 @@
                 
                 return parseFloat(data.data.price);
             } catch (error) {
-                console.log(`⚠️ KuCoin: ${symbol} not found`);
                 return null;
             }
         }
@@ -653,7 +666,7 @@
         async function fetchGateioPrice(symbol) {
             try {
                 const pair = EXCHANGES.gateio.format(symbol);
-                const response = await fetch(`${EXCHANGES.gateio.apiUrl}?currency_pair=${pair}`);
+                const response = await fetchWithTimeout(`${EXCHANGES.gateio.apiUrl}?currency_pair=${pair}`, 2000);
                 if (!response.ok) return null;
                 
                 const data = await response.json();
@@ -661,7 +674,6 @@
                 
                 return parseFloat(data[0].last);
             } catch (error) {
-                console.log(`⚠️ Gate.io: ${symbol} not found`);
                 return null;
             }
         }
@@ -670,7 +682,7 @@
         async function fetchMexcPrice(symbol) {
             try {
                 const pair = EXCHANGES.mexc.format(symbol);
-                const response = await fetch(`${EXCHANGES.mexc.apiUrl}?symbol=${pair}`);
+                const response = await fetchWithTimeout(`${EXCHANGES.mexc.apiUrl}?symbol=${pair}`, 2000);
                 if (!response.ok) return null;
                 
                 const data = await response.json();
@@ -678,7 +690,6 @@
                 
                 return parseFloat(data.price);
             } catch (error) {
-                console.log(`⚠️ MEXC: ${symbol} not found`);
                 return null;
             }
         }
@@ -714,9 +725,10 @@
                 coin.volume_24h >= minVolume
             );
 
-            console.log(`💰 Scanning ${eligibleCoins.length} eligible coins...`);
+            console.log(`💰 Scanning ${eligibleCoins.length} eligible coins in parallel...`);
 
-            for (const coin of eligibleCoins) {
+            // Process all coins in parallel for speed
+            const results = await Promise.all(eligibleCoins.map(async (coin) => {
                 updateApiStatus('loading', `Scanning ${coin.symbol}...`);
                 
                 const exchangePrices = await fetchExchangePrices(coin.symbol);
@@ -729,7 +741,7 @@
 
                 if (validPrices.length < 2) {
                     console.log(`⚠️ ${coin.symbol}: Not enough exchanges (${validPrices.length})`);
-                    continue;
+                    return null;
                 }
 
                 // Find lowest and highest prices
@@ -753,7 +765,8 @@
                 console.log(`📊 ${coin.symbol}: Buy ${buyExchange.exchange} $${buyPrice.toFixed(4)} → Sell ${sellExchange.exchange} $${sellPrice.toFixed(4)} = ${netSpread.toFixed(2)}%`);
 
                 if (netSpread >= minSpread) {
-                    opportunities.push({
+                    console.log(`✅ OPPORTUNITY: ${coin.symbol} +${netSpread.toFixed(2)}%`);
+                    return {
                         coin: coin,
                         buyExchange: EXCHANGES[buyExchange.exchange].name,
                         sellExchange: EXCHANGES[sellExchange.exchange].name,
@@ -764,16 +777,16 @@
                         totalFees: totalFees.toFixed(2),
                         confidence: validPrices.length >= 3 ? 95 : 85,
                         lastUpdated: Date.now()
-                    });
-
-                    console.log(`✅ OPPORTUNITY FOUND: ${coin.symbol} +${netSpread.toFixed(2)}%`);
+                    };
                 }
 
-                // Small delay to avoid rate limits
-                await new Promise(resolve => setTimeout(resolve, 250));
-            }
+                return null;
+            }));
 
-            return opportunities.sort((a, b) => parseFloat(b.netSpread) - parseFloat(a.netSpread));
+            // Filter out nulls and sort by net spread
+            return results
+                .filter(opp => opp !== null)
+                .sort((a, b) => parseFloat(b.netSpread) - parseFloat(a.netSpread));
         }
 
         async function scanMarkets() {
@@ -788,7 +801,7 @@
                     <div class="spinner"></div>
                     <h3>Fetching Real Market Data</h3>
                     <p>Getting live prices from Binance, KuCoin, Gate.io, and MEXC...</p>
-                    <p style="margin-top: 10px; color: #ffc107;">⏳ This may take 30-60 seconds...</p>
+                    <p style="margin-top: 10px; color: #ffc107;">⏳ This takes 10-20 seconds...</p>
                 </div>
             `;
 
