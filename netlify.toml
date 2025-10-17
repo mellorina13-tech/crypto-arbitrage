@@ -4,7 +4,7 @@
 
 [functions]
   # Pro plan allows up to 26 seconds timeout
-  timeout = 26
+  timeout = 10
 
 [[redirects]]
   from = "/api/*"
@@ -17,3 +17,4 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "no-referrer"
+
