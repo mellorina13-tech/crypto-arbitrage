@@ -497,14 +497,16 @@
             <div class="control-row">
                 <div class="control-group">
                     <label for="minSpread">Min Spread %</label>
-                    <input type="number" id="minSpread" value="0.5" min="0.1" max="20" step="0.1">
+                    <input type="number" id="minSpread" value="0.1" min="0.01" max="20" step="0.01">
                 </div>
                 <div class="control-group">
                     <label for="coinLimit">Coins to Scan</label>
                     <select id="coinLimit">
-                        <option value="5" selected>Top 5 (Fast)</option>
-                        <option value="10">Top 10</option>
-                        <option value="15">Top 15</option>
+                        <option value="10">Top 10 (Fast)</option>
+                        <option value="25">Top 25</option>
+                        <option value="50" selected>Top 50</option>
+                        <option value="100">Top 100</option>
+                        <option value="250">Top 250</option>
                     </select>
                 </div>
                 <div class="control-group">
@@ -540,14 +542,22 @@
             binance: 0.1,
             kucoin: 0.1,
             gateio: 0.2,
-            mexc: 0.2
+            mexc: 0.2,
+            bybit: 0.1,
+            okx: 0.1,
+            huobi: 0.2,
+            bitget: 0.1
         };
 
         const EXCHANGE_NAMES = {
             binance: 'Binance',
             kucoin: 'KuCoin',
             gateio: 'Gate.io',
-            mexc: 'MEXC'
+            mexc: 'MEXC',
+            bybit: 'Bybit',
+            okx: 'OKX',
+            huobi: 'Huobi',
+            bitget: 'Bitget'
         };
 
         const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
@@ -731,7 +741,7 @@
                 <div class="loading">
                     <div class="spinner"></div>
                     <h3>Fetching Real Market Data</h3>
-                    <p>Getting live prices from Binance, KuCoin, Gate.io, and MEXC via backend...</p>
+                    <p>Getting live prices from 8 exchanges (Binance, KuCoin, Gate.io, MEXC, Bybit, OKX, Huobi, Bitget)...</p>
                     <p style="margin-top: 10px; color: #4caf50;">⚡ No CORS issues - using serverless backend!</p>
                 </div>
             `;
