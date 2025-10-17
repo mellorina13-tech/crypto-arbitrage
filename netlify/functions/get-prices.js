@@ -56,7 +56,7 @@ const EXCHANGES = {
 };
 
 // Fetch price from a single exchange with timeout
-async function fetchExchangePrice(exchange, symbol, timeout = 3000) {
+async function fetchExchangePrice(exchange, symbol, timeout = 4000) {
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -76,7 +76,6 @@ async function fetchExchangePrice(exchange, symbol, timeout = 3000) {
         return exchange.parsePrice(data);
 
     } catch (error) {
-        console.log(`Error fetching ${symbol} from ${exchange.name}:`, error.message);
         return null;
     }
 }
@@ -118,44 +117,53 @@ exports.handler = async (event, context) => {
     console.log(`Fetching prices for: ${symbolList.join(', ')}`);
 
     try {
-        // Fetch prices for all symbols from all exchanges in parallel
-        const results = {};
+        // Process all symbols in parallel (not sequential)
+        const results = await Promise.all(
+            symbolList.map(async (symbol) => {
+                console.log(`Fetching ${symbol}...`);
 
-        for (const symbol of symbolList) {
-            console.log(`Fetching ${symbol}...`);
+                // Fetch all exchanges in parallel for this symbol
+                const prices = await Promise.all([
+                    fetchExchangePrice(EXCHANGES.binance, symbol),
+                    fetchExchangePrice(EXCHANGES.kucoin, symbol),
+                    fetchExchangePrice(EXCHANGES.gateio, symbol),
+                    fetchExchangePrice(EXCHANGES.mexc, symbol),
+                    fetchExchangePrice(EXCHANGES.bybit, symbol),
+                    fetchExchangePrice(EXCHANGES.okx, symbol),
+                    fetchExchangePrice(EXCHANGES.huobi, symbol),
+                    fetchExchangePrice(EXCHANGES.bitget, symbol)
+                ]);
 
-            const prices = await Promise.all([
-                fetchExchangePrice(EXCHANGES.binance, symbol),
-                fetchExchangePrice(EXCHANGES.kucoin, symbol),
-                fetchExchangePrice(EXCHANGES.gateio, symbol),
-                fetchExchangePrice(EXCHANGES.mexc, symbol),
-                fetchExchangePrice(EXCHANGES.bybit, symbol),
-                fetchExchangePrice(EXCHANGES.okx, symbol),
-                fetchExchangePrice(EXCHANGES.huobi, symbol),
-                fetchExchangePrice(EXCHANGES.bitget, symbol)
-            ]);
+                return {
+                    symbol,
+                    data: {
+                        binance: prices[0],
+                        kucoin: prices[1],
+                        gateio: prices[2],
+                        mexc: prices[3],
+                        bybit: prices[4],
+                        okx: prices[5],
+                        huobi: prices[6],
+                        bitget: prices[7],
+                        timestamp: Date.now()
+                    }
+                };
+            })
+        );
 
-            results[symbol] = {
-                binance: prices[0],
-                kucoin: prices[1],
-                gateio: prices[2],
-                mexc: prices[3],
-                bybit: prices[4],
-                okx: prices[5],
-                huobi: prices[6],
-                bitget: prices[7],
-                timestamp: Date.now()
-            };
-
-            console.log(`${symbol} results:`, results[symbol]);
-        }
+        // Convert array to object
+        const finalResults = {};
+        results.forEach(({ symbol, data }) => {
+            finalResults[symbol] = data;
+            console.log(`${symbol} results:`, data);
+        });
 
         return {
             statusCode: 200,
             headers,
             body: JSON.stringify({
                 success: true,
-                data: results,
+                data: finalResults,
                 timestamp: Date.now()
             })
         };
