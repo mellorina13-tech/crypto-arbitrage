@@ -1,54 +1,100 @@
-// Netlify Function to fetch cryptocurrency prices from exchanges
-// This runs on the server, so NO CORS issues!
-
 const fetch = require('node-fetch');
+
+// Symbol mapping for exchanges with different naming
+const SYMBOL_MAPPING = {
+    // Coins that don't exist or have different names on certain exchanges
+    'LION': {
+        mexc: null, // LION not available on MEXC
+        gateio: 'LION',
+        binance: 'LION',
+        kucoin: 'LION',
+        bybit: 'LION',
+        okx: 'LION',
+        huobi: 'lion',
+        bitget: 'LION'
+    },
+    'STETH': {
+        mexc: null, // Not on MEXC
+        huobi: null // Not on Huobi
+    },
+    'WSTETH': {
+        mexc: null,
+        huobi: null
+    },
+    'USDT': {
+        // USDT pairs don't make sense
+        all: null
+    }
+    // Add more as needed
+};
+
+// Get correct symbol for exchange
+function getExchangeSymbol(baseSymbol, exchangeName) {
+    // Check if symbol has custom mapping
+    if (SYMBOL_MAPPING[baseSymbol]) {
+        const mapping = SYMBOL_MAPPING[baseSymbol];
+        
+        // Check for 'all' exchanges block
+        if (mapping.all === null) {
+            return null;
+        }
+        
+        // Check for specific exchange mapping
+        if (mapping[exchangeName] !== undefined) {
+            return mapping[exchangeName];
+        }
+    }
+    
+    // Default: use the symbol as-is
+    return baseSymbol;
+}
 
 // Exchange configurations
 const EXCHANGES = {
     binance: {
-        name: 'Binance',
+        name: 'binance',
         fee: 0.1,
         url: (symbol) => `https://api.binance.com/api/v3/ticker/price?symbol=${symbol}USDT`,
         parsePrice: (data) => parseFloat(data.price)
     },
     kucoin: {
-        name: 'KuCoin',
+        name: 'kucoin',
         fee: 0.1,
         url: (symbol) => `https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=${symbol}-USDT`,
         parsePrice: (data) => data.code === '200000' ? parseFloat(data.data.price) : null
     },
     gateio: {
-        name: 'Gate.io',
+        name: 'gateio',
         fee: 0.2,
         url: (symbol) => `https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${symbol}_USDT`,
         parsePrice: (data) => data && data.length > 0 ? parseFloat(data[0].last) : null
     },
     mexc: {
-        name: 'MEXC',
+        name: 'mexc',
         fee: 0.2,
         url: (symbol) => `https://api.mexc.com/api/v3/ticker/price?symbol=${symbol}USDT`,
         parsePrice: (data) => data.price ? parseFloat(data.price) : null
     },
     bybit: {
-        name: 'Bybit',
+        name: 'bybit',
         fee: 0.1,
         url: (symbol) => `https://api.bybit.com/v5/market/tickers?category=spot&symbol=${symbol}USDT`,
         parsePrice: (data) => data?.result?.list?.[0]?.lastPrice ? parseFloat(data.result.list[0].lastPrice) : null
     },
     okx: {
-        name: 'OKX',
+        name: 'okx',
         fee: 0.1,
         url: (symbol) => `https://www.okx.com/api/v5/market/ticker?instId=${symbol}-USDT`,
         parsePrice: (data) => data?.data?.[0]?.last ? parseFloat(data.data[0].last) : null
     },
     huobi: {
-        name: 'Huobi',
+        name: 'huobi',
         fee: 0.2,
         url: (symbol) => `https://api.huobi.pro/market/detail/merged?symbol=${symbol.toLowerCase()}usdt`,
         parsePrice: (data) => data?.tick?.close ? parseFloat(data.tick.close) : null
     },
     bitget: {
-        name: 'Bitget',
+        name: 'bitget',
         fee: 0.1,
         url: (symbol) => `https://api.bitget.com/api/spot/v1/market/ticker?symbol=${symbol}USDT`,
         parsePrice: (data) => data?.data?.close ? parseFloat(data.data.close) : null
@@ -56,8 +102,16 @@ const EXCHANGES = {
 };
 
 // Fetch price from a single exchange with timeout
-async function fetchExchangePrice(exchange, symbol, timeout = 6000) {
+async function fetchExchangePrice(exchange, baseSymbol, timeout = 6000) {
     try {
+        // Get the correct symbol for this exchange
+        const symbol = getExchangeSymbol(baseSymbol, exchange.name.toLowerCase());
+        
+        // If symbol is null, this coin is not available on this exchange
+        if (symbol === null) {
+            return null;
+        }
+        
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
