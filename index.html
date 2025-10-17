@@ -617,99 +617,36 @@
             }
         }
 
-        // Fetch prices from all exchanges via Netlify Function (with batching for large requests)
+        // Fetch prices from all exchanges via Netlify Function
         async function fetchExchangePrices(symbols) {
             const symbolList = Array.isArray(symbols) ? symbols : [symbols];
-            const BATCH_SIZE = 20; // Process 20 coins at a time to stay under 10s timeout
+            const symbolString = symbolList.join(',');
             
-            console.log(`📊 Total symbols to fetch: ${symbolList.length}`);
-            
-            // If small request, send all at once
-            if (symbolList.length <= BATCH_SIZE) {
-                const symbolString = symbolList.join(',');
+            try {
+                console.log(`🔍 Fetching prices for ${symbolList.length} coins from 8 exchanges...`);
+                console.log(`⏱️ With Pro plan timeout (26s), this should complete in one request`);
                 
-                try {
-                    console.log(`🔍 Fetching ${symbolList.length} coins in single request...`);
-                    
-                    const response = await fetch(`${API_ENDPOINT}?symbols=${symbolString}`);
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    
-                    const result = await response.json();
-                    
-                    if (!result.success) {
-                        throw new Error(result.error || 'Unknown error');
-                    }
-                    
-                    console.log('✅ Received prices from backend');
-                    apiCallCount++;
-                    
-                    return result.data;
-                    
-                } catch (error) {
-                    console.error('❌ Backend API error:', error);
-                    return null;
+                const response = await fetch(`${API_ENDPOINT}?symbols=${symbolString}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-            }
-            
-            // For large requests, batch them
-            console.log(`📦 Large request! Batching ${symbolList.length} coins into groups of ${BATCH_SIZE}...`);
-            
-            const allResults = {};
-            const batches = [];
-            
-            // Split into batches
-            for (let i = 0; i < symbolList.length; i += BATCH_SIZE) {
-                batches.push(symbolList.slice(i, i + BATCH_SIZE));
-            }
-            
-            console.log(`📊 Created ${batches.length} batches`);
-            
-            // Process each batch sequentially
-            for (let i = 0; i < batches.length; i++) {
-                const batch = batches[i];
-                const batchString = batch.join(',');
                 
-                updateApiStatus('loading', `Batch ${i + 1}/${batches.length}: Fetching ${batch.length} coins...`);
-                console.log(`🔍 Batch ${i + 1}/${batches.length}: Processing ${batch.length} coins`);
+                const result = await response.json();
                 
-                try {
-                    const response = await fetch(`${API_ENDPOINT}?symbols=${batchString}`);
-                    
-                    if (!response.ok) {
-                        console.error(`❌ Batch ${i + 1} failed: HTTP ${response.status}`);
-                        continue;
-                    }
-                    
-                    const result = await response.json();
-                    
-                    if (!result.success) {
-                        console.error(`❌ Batch ${i + 1} failed:`, result.error);
-                        continue;
-                    }
-                    
-                    // Merge results
-                    Object.assign(allResults, result.data);
-                    
-                    console.log(`✅ Batch ${i + 1}/${batches.length} completed - ${Object.keys(result.data).length} coins received`);
-                    apiCallCount++;
-                    
-                    // Small delay between batches
-                    if (i < batches.length - 1) {
-                        console.log(`⏳ Waiting 500ms before next batch...`);
-                        await new Promise(resolve => setTimeout(resolve, 500));
-                    }
-                    
-                } catch (error) {
-                    console.error(`❌ Batch ${i + 1} error:`, error);
+                if (!result.success) {
+                    throw new Error(result.error || 'Unknown error');
                 }
+                
+                console.log(`✅ Received prices for ${Object.keys(result.data).length} coins from backend`);
+                apiCallCount++;
+                
+                return result.data;
+                
+            } catch (error) {
+                console.error('❌ Backend API error:', error);
+                return null;
             }
-            
-            console.log(`✅ All batches completed - total ${Object.keys(allResults).length}/${symbolList.length} coins processed`);
-            
-            return Object.keys(allResults).length > 0 ? allResults : null;
         }
 
         // Find real arbitrage opportunities
