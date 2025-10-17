@@ -1,0 +1,8 @@
+{
+  "name": "crypto-arbitrage-scanner",
+  "version": "1.0.0",
+  "description": "Crypto arbitrage scanner with real exchange data",
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  }
+}
