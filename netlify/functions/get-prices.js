@@ -56,7 +56,7 @@ const EXCHANGES = {
 };
 
 // Fetch price from a single exchange with timeout
-async function fetchExchangePrice(exchange, symbol, timeout = 4000) {
+async function fetchExchangePrice(exchange, symbol, timeout = 6000) {
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -71,25 +71,15 @@ async function fetchExchangePrice(exchange, symbol, timeout = 4000) {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-            console.log(`${exchange.name} ${symbol}: HTTP ${response.status}`);
             return null;
         }
 
         const data = await response.json();
         const price = exchange.parsePrice(data);
         
-        if (price === null) {
-            console.log(`${exchange.name} ${symbol}: Failed to parse price from response`);
-        }
-        
         return price;
 
     } catch (error) {
-        if (error.name === 'AbortError') {
-            console.log(`${exchange.name} ${symbol}: Timeout after ${timeout}ms`);
-        } else {
-            console.log(`${exchange.name} ${symbol}: ${error.message}`);
-        }
         return null;
     }
 }
@@ -128,15 +118,12 @@ exports.handler = async (event, context) => {
 
     const symbolList = symbols.split(',').map(s => s.trim().toUpperCase());
 
-    console.log(`\n========== PROCESSING ${symbolList.length} SYMBOLS ==========`);
-    console.log(`Symbols: ${symbolList.join(', ')}`);
+    console.log(`\n🚀 Processing ${symbolList.length} symbols with 26s timeout`);
 
     try {
-        // Process all symbols in parallel (not sequential)
+        // Process all symbols in parallel
         const results = await Promise.all(
             symbolList.map(async (symbol) => {
-                console.log(`\n--- Fetching ${symbol} ---`);
-
                 // Fetch all exchanges in parallel for this symbol
                 const priceResults = await Promise.allSettled([
                     fetchExchangePrice(EXCHANGES.binance, symbol),
@@ -149,19 +136,14 @@ exports.handler = async (event, context) => {
                     fetchExchangePrice(EXCHANGES.bitget, symbol)
                 ]);
 
-                const prices = priceResults.map((result, index) => {
-                    const exchangeName = ['binance', 'kucoin', 'gateio', 'mexc', 'bybit', 'okx', 'huobi', 'bitget'][index];
-                    if (result.status === 'fulfilled') {
-                        console.log(`  ${exchangeName}: ${result.value !== null ? '$' + result.value : 'null'}`);
-                        return result.value;
-                    } else {
-                        console.log(`  ${exchangeName}: ERROR - ${result.reason}`);
-                        return null;
-                    }
+                const prices = priceResults.map((result) => {
+                    return result.status === 'fulfilled' ? result.value : null;
                 });
 
                 const validPrices = prices.filter(p => p !== null).length;
-                console.log(`  ✓ ${symbol}: ${validPrices}/8 exchanges responded`);
+                if (validPrices > 0) {
+                    console.log(`✓ ${symbol}: ${validPrices}/8 exchanges`);
+                }
 
                 return {
                     symbol,
@@ -186,7 +168,12 @@ exports.handler = async (event, context) => {
             finalResults[symbol] = data;
         });
 
-        console.log(`\n========== COMPLETED: ${Object.keys(finalResults).length} symbols processed ==========\n`);
+        const successCount = results.filter(r => {
+            const validCount = Object.values(r.data).filter(v => v !== null && typeof v === 'number').length;
+            return validCount > 0;
+        }).length;
+
+        console.log(`✅ Completed: ${successCount}/${symbolList.length} coins with data\n`);
 
         return {
             statusCode: 200,
