@@ -422,6 +422,17 @@
             margin-top: 10px;
         }
 
+        .warning-badge {
+            background: rgba(255, 152, 0, 0.15);
+            border: 1px solid #ff9800;
+            color: #ff9800;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
         @media (max-width: 768px) {
             .header h1 { font-size: 1.8rem; }
             .exchanges { 
@@ -446,10 +457,10 @@
     <div class="container">
         <div class="header">
             <h1>🚀 Crypto Arbitrage Scanner</h1>
-            <p class="subtitle">Real CoinGecko Data - Professional Arbitrage Detection</p>
+            <p class="subtitle">Real Exchange Data - Professional Arbitrage Detection</p>
             <div class="api-status" id="apiStatus">
                 <div class="status-dot" id="statusDot"></div>
-                <span id="statusText">Connecting to CoinGecko API...</span>
+                <span id="statusText">Connecting to exchanges...</span>
             </div>
         </div>
 
@@ -486,15 +497,14 @@
             <div class="control-row">
                 <div class="control-group">
                     <label for="minSpread">Min Spread %</label>
-                    <input type="number" id="minSpread" value="1.0" min="0.1" max="20" step="0.1">
+                    <input type="number" id="minSpread" value="0.5" min="0.1" max="20" step="0.1">
                 </div>
                 <div class="control-group">
                     <label for="coinLimit">Coins to Scan</label>
                     <select id="coinLimit">
-                        <option value="25">Top 25</option>
-                        <option value="50" selected>Top 50</option>
-                        <option value="100">Top 100</option>
-                        <option value="250">Top 250</option>
+                        <option value="10" selected>Top 10</option>
+                        <option value="20">Top 20</option>
+                        <option value="30">Top 30</option>
                     </select>
                 </div>
                 <div class="control-group">
@@ -506,14 +516,6 @@
                         <option value="100000000">$100M+</option>
                     </select>
                 </div>
-                <div class="control-group">
-                    <label for="maxResults">Max Results</label>
-                    <select id="maxResults">
-                        <option value="10" selected>10</option>
-                        <option value="20">20</option>
-                        <option value="50">50</option>
-                    </select>
-                </div>
                 <button class="scan-btn" onclick="scanMarkets()" id="scanBtn">
                     <span>⚡</span> Scan Live Markets
                 </button>
@@ -523,29 +525,43 @@
         <div class="opportunities-grid" id="opportunitiesContainer">
             <div class="loading">
                 <div class="spinner"></div>
-                <h3>Connecting to CoinGecko</h3>
-                <p>Fetching real-time cryptocurrency data...</p>
+                <h3>Connecting to Exchanges</h3>
+                <p>Fetching real-time cryptocurrency data from multiple exchanges...</p>
             </div>
         </div>
     </div>
 
     <script>
-        // CoinGecko API - NO API KEY REQUIRED!
+        // Real Exchange APIs
+        const EXCHANGES = {
+            binance: {
+                name: 'Binance',
+                fee: 0.1,
+                apiUrl: 'https://api.binance.com/api/v3/ticker/price',
+                format: (symbol) => `${symbol}USDT`
+            },
+            kucoin: {
+                name: 'KuCoin',
+                fee: 0.1,
+                apiUrl: 'https://api.kucoin.com/api/v1/market/orderbook/level1',
+                format: (symbol) => `${symbol}-USDT`
+            },
+            gateio: {
+                name: 'Gate.io',
+                fee: 0.2,
+                apiUrl: 'https://api.gateio.ws/api/v4/spot/tickers',
+                format: (symbol) => `${symbol}_USDT`
+            },
+            mexc: {
+                name: 'MEXC',
+                fee: 0.2,
+                apiUrl: 'https://api.mexc.com/api/v3/ticker/price',
+                format: (symbol) => `${symbol}USDT`
+            }
+        };
+
         const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
         
-        // Exchange data for arbitrage simulation
-        const EXCHANGES = [
-            { name: 'Binance', fee: 0.1, region: 'Global', efficiency: 0.98 },
-            { name: 'Coinbase', fee: 0.5, region: 'US', efficiency: 0.97 },
-            { name: 'KuCoin', fee: 0.1, region: 'Asia', efficiency: 0.92 },
-            { name: 'Gate.io', fee: 0.2, region: 'Asia', efficiency: 0.90 },
-            { name: 'MEXC', fee: 0.2, region: 'Asia', efficiency: 0.88 },
-            { name: 'OKX', fee: 0.1, region: 'Asia', efficiency: 0.95 },
-            { name: 'Kraken', fee: 0.26, region: 'US', efficiency: 0.96 },
-            { name: 'Huobi', fee: 0.2, region: 'Asia', efficiency: 0.91 },
-            { name: 'Bybit', fee: 0.1, region: 'Asia', efficiency: 0.90 }
-        ];
-
         let livePrices = {};
         let opportunities = [];
         let apiCallCount = 0;
@@ -563,25 +579,19 @@
                                            status === 'loading' ? '#ffc107' : '#f44336';
         }
 
-        async function fetchLivePrices() {
+        // Fetch coin list from CoinGecko
+        async function fetchCoinList() {
             const coinLimit = parseInt(document.getElementById('coinLimit').value);
-            updateApiStatus('loading', 'Fetching live prices from CoinGecko...');
             
             try {
                 console.log(`📡 Fetching top ${coinLimit} cryptocurrencies from CoinGecko...`);
                 
-                // CoinGecko doesn't require API key for basic usage
                 const url = `${COINGECKO_BASE_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${coinLimit}&page=1&sparkline=false&price_change_percentage=24h`;
                 
                 const response = await fetch(url);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
                 const data = await response.json();
-                
-                console.log('✅ Live data received for', data.length, 'cryptocurrencies');
                 apiCallCount++;
                 
                 livePrices = {};
@@ -590,103 +600,180 @@
                         id: coin.id,
                         name: coin.name,
                         symbol: coin.symbol.toUpperCase(),
-                        price: coin.current_price,
                         market_cap: coin.market_cap,
                         volume_24h: coin.total_volume,
                         percent_change_24h: coin.price_change_percentage_24h || 0,
-                        last_updated: coin.last_updated,
-                        rank: index + 1
+                        rank: index + 1,
+                        exchangePrices: {}
                     };
                 });
                 
-                updateApiStatus('online', `Live data from CoinGecko • ${Object.keys(livePrices).length} coins`);
-                updatePriceTicker();
-                lastUpdateTime = new Date();
-                
+                console.log('✅ Coin list received:', Object.keys(livePrices).length, 'coins');
                 return true;
                 
             } catch (error) {
                 console.error('❌ CoinGecko API failed:', error);
-                updateApiStatus('error', `API Error: ${error.message}`);
                 return false;
             }
         }
 
-        function updatePriceTicker() {
-            const ticker = document.getElementById('tickerContent');
-            if (!ticker || Object.keys(livePrices).length === 0) return;
-
-            const topCoins = Object.values(livePrices)
-                .sort((a, b) => a.rank - b.rank)
-                .slice(0, 15);
-
-            const tickerItems = topCoins.map(coin => {
-                const changeSign = coin.percent_change_24h >= 0 ? '+' : '';
-                return `${coin.symbol}: $${formatPrice(coin.price)} (${changeSign}${coin.percent_change_24h.toFixed(2)}%)`;
-            });
-
-            ticker.textContent = tickerItems.join(' • ') + ' • ';
+        // Fetch real price from Binance
+        async function fetchBinancePrice(symbol) {
+            try {
+                const pair = EXCHANGES.binance.format(symbol);
+                const response = await fetch(`${EXCHANGES.binance.apiUrl}?symbol=${pair}`);
+                if (!response.ok) return null;
+                
+                const data = await response.json();
+                return parseFloat(data.price);
+            } catch (error) {
+                console.log(`⚠️ Binance: ${symbol} not found`);
+                return null;
+            }
         }
 
-        function generateArbitrageOpportunities() {
+        // Fetch real price from KuCoin
+        async function fetchKucoinPrice(symbol) {
+            try {
+                const pair = EXCHANGES.kucoin.format(symbol);
+                const response = await fetch(`${EXCHANGES.kucoin.apiUrl}?symbol=${pair}`);
+                if (!response.ok) return null;
+                
+                const data = await response.json();
+                if (data.code !== '200000') return null;
+                
+                return parseFloat(data.data.price);
+            } catch (error) {
+                console.log(`⚠️ KuCoin: ${symbol} not found`);
+                return null;
+            }
+        }
+
+        // Fetch real price from Gate.io
+        async function fetchGateioPrice(symbol) {
+            try {
+                const pair = EXCHANGES.gateio.format(symbol);
+                const response = await fetch(`${EXCHANGES.gateio.apiUrl}?currency_pair=${pair}`);
+                if (!response.ok) return null;
+                
+                const data = await response.json();
+                if (!data || data.length === 0) return null;
+                
+                return parseFloat(data[0].last);
+            } catch (error) {
+                console.log(`⚠️ Gate.io: ${symbol} not found`);
+                return null;
+            }
+        }
+
+        // Fetch real price from MEXC
+        async function fetchMexcPrice(symbol) {
+            try {
+                const pair = EXCHANGES.mexc.format(symbol);
+                const response = await fetch(`${EXCHANGES.mexc.apiUrl}?symbol=${pair}`);
+                if (!response.ok) return null;
+                
+                const data = await response.json();
+                if (!data.price) return null;
+                
+                return parseFloat(data.price);
+            } catch (error) {
+                console.log(`⚠️ MEXC: ${symbol} not found`);
+                return null;
+            }
+        }
+
+        // Fetch prices from all exchanges for a coin
+        async function fetchExchangePrices(symbol) {
+            console.log(`🔍 Fetching ${symbol} from all exchanges...`);
+            
+            const prices = await Promise.all([
+                fetchBinancePrice(symbol),
+                fetchKucoinPrice(symbol),
+                fetchGateioPrice(symbol),
+                fetchMexcPrice(symbol)
+            ]);
+
+            apiCallCount += 4;
+
+            return {
+                binance: prices[0],
+                kucoin: prices[1],
+                gateio: prices[2],
+                mexc: prices[3]
+            };
+        }
+
+        // Find real arbitrage opportunities
+        async function findRealArbitrageOpportunities() {
             const opportunities = [];
             const minSpread = parseFloat(document.getElementById('minSpread').value);
             const minVolume = parseFloat(document.getElementById('volumeFilter').value);
-            const maxResults = parseInt(document.getElementById('maxResults').value);
 
             const eligibleCoins = Object.values(livePrices).filter(coin => 
                 coin.volume_24h >= minVolume
             );
 
-            eligibleCoins.forEach(coin => {
-                const volatility = Math.abs(coin.percent_change_24h) / 100;
-                const marketCapFactor = Math.min(1, 50000000000 / coin.market_cap);
-                const arbitrageChance = Math.min(0.7, (volatility * 5 + marketCapFactor * 0.3));
+            console.log(`💰 Scanning ${eligibleCoins.length} eligible coins...`);
 
-                if (Math.random() < arbitrageChance) {
-                    const exchanges = [...EXCHANGES].sort(() => Math.random() - 0.5);
-                    const buyExchange = exchanges[0];
-                    const sellExchange = exchanges[1];
+            for (const coin of eligibleCoins) {
+                updateApiStatus('loading', `Scanning ${coin.symbol}...`);
+                
+                const exchangePrices = await fetchExchangePrices(coin.symbol);
+                coin.exchangePrices = exchangePrices;
 
-                    const regionalSpread = buyExchange.region !== sellExchange.region ? 
-                        Math.random() * 0.015 : Math.random() * 0.005;
-                    
-                    const efficiencySpread = Math.abs(buyExchange.efficiency - sellExchange.efficiency) * 0.03;
-                    const volatilitySpread = volatility * (0.3 + Math.random() * 0.7);
-                    const timeSpread = Math.random() * 0.01;
-                    
-                    const totalSpreadPercent = (regionalSpread + efficiencySpread + volatilitySpread + timeSpread) * 100;
+                // Filter out null prices
+                const validPrices = Object.entries(exchangePrices)
+                    .filter(([exchange, price]) => price !== null)
+                    .map(([exchange, price]) => ({ exchange, price }));
 
-                    if (totalSpreadPercent >= minSpread) {
-                        const spreadMultiplier = totalSpreadPercent / 200;
-                        const buyPrice = coin.price * (1 - spreadMultiplier);
-                        const sellPrice = coin.price * (1 + spreadMultiplier);
-                        
-                        const totalFees = buyExchange.fee + sellExchange.fee;
-                        const netSpread = totalSpreadPercent - totalFees;
-
-                        if (netSpread > 0.1) {
-                            opportunities.push({
-                                coin: coin,
-                                buyExchange: buyExchange.name,
-                                sellExchange: sellExchange.name,
-                                buyPrice: buyPrice,
-                                sellPrice: sellPrice,
-                                grossSpread: totalSpreadPercent.toFixed(2),
-                                netSpread: netSpread.toFixed(2),
-                                totalFees: totalFees.toFixed(2),
-                                confidence: Math.floor(88 + Math.random() * 12),
-                                estimatedTime: Math.floor(Math.random() * 15 + 3),
-                                lastUpdated: Date.now()
-                            });
-                        }
-                    }
+                if (validPrices.length < 2) {
+                    console.log(`⚠️ ${coin.symbol}: Not enough exchanges (${validPrices.length})`);
+                    continue;
                 }
-            });
 
-            return opportunities
-                .sort((a, b) => parseFloat(b.netSpread) - parseFloat(a.netSpread))
-                .slice(0, maxResults);
+                // Find lowest and highest prices
+                validPrices.sort((a, b) => a.price - b.price);
+                const buyExchange = validPrices[0];
+                const sellExchange = validPrices[validPrices.length - 1];
+
+                // Calculate real spread
+                const buyPrice = buyExchange.price;
+                const sellPrice = sellExchange.price;
+                const grossSpreadPercent = ((sellPrice - buyPrice) / buyPrice) * 100;
+
+                // Calculate fees
+                const buyFee = EXCHANGES[buyExchange.exchange].fee;
+                const sellFee = EXCHANGES[sellExchange.exchange].fee;
+                const totalFees = buyFee + sellFee;
+
+                // Net spread after fees
+                const netSpread = grossSpreadPercent - totalFees;
+
+                console.log(`📊 ${coin.symbol}: Buy ${buyExchange.exchange} $${buyPrice.toFixed(4)} → Sell ${sellExchange.exchange} $${sellPrice.toFixed(4)} = ${netSpread.toFixed(2)}%`);
+
+                if (netSpread >= minSpread) {
+                    opportunities.push({
+                        coin: coin,
+                        buyExchange: EXCHANGES[buyExchange.exchange].name,
+                        sellExchange: EXCHANGES[sellExchange.exchange].name,
+                        buyPrice: buyPrice,
+                        sellPrice: sellPrice,
+                        grossSpread: grossSpreadPercent.toFixed(2),
+                        netSpread: netSpread.toFixed(2),
+                        totalFees: totalFees.toFixed(2),
+                        confidence: validPrices.length >= 3 ? 95 : 85,
+                        lastUpdated: Date.now()
+                    });
+
+                    console.log(`✅ OPPORTUNITY FOUND: ${coin.symbol} +${netSpread.toFixed(2)}%`);
+                }
+
+                // Small delay to avoid rate limits
+                await new Promise(resolve => setTimeout(resolve, 250));
+            }
+
+            return opportunities.sort((a, b) => parseFloat(b.netSpread) - parseFloat(a.netSpread));
         }
 
         async function scanMarkets() {
@@ -699,28 +786,33 @@
             container.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
-                    <h3>Fetching Live Market Data</h3>
-                    <p>Getting real-time prices from CoinGecko...</p>
+                    <h3>Fetching Real Market Data</h3>
+                    <p>Getting live prices from Binance, KuCoin, Gate.io, and MEXC...</p>
+                    <p style="margin-top: 10px; color: #ffc107;">⏳ This may take 30-60 seconds...</p>
                 </div>
             `;
 
             try {
-                const success = await fetchLivePrices();
+                updateApiStatus('loading', 'Fetching coin list...');
+                const success = await fetchCoinList();
                 if (!success) {
-                    throw new Error('Failed to fetch live cryptocurrency data');
+                    throw new Error('Failed to fetch coin list from CoinGecko');
                 }
 
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                opportunities = generateArbitrageOpportunities();
-                console.log('💰 Generated', opportunities.length, 'arbitrage opportunities from live data');
+                updateApiStatus('loading', 'Scanning exchanges for arbitrage...');
+                opportunities = await findRealArbitrageOpportunities();
+                
+                console.log('💰 Total opportunities found:', opportunities.length);
 
                 displayOpportunities();
                 updateStats();
+                updateApiStatus('online', `Live • ${opportunities.length} opportunities found`);
+                lastUpdateTime = new Date();
 
             } catch (error) {
                 console.error('❌ Scan failed:', error);
-                displayError('Failed to scan markets. Please check the console for details.');
+                displayError('Failed to scan markets. Please try again.');
+                updateApiStatus('error', 'Scan failed');
             }
 
             btn.disabled = false;
@@ -734,12 +826,13 @@
                 container.innerHTML = `
                     <div class="no-results">
                         <h3>🔍 No Profitable Opportunities Found</h3>
-                        <p>Current market conditions are very efficient. Try lowering the minimum spread or increasing the coin limit.</p>
+                        <p>Current market conditions show minimal price differences across exchanges.</p>
+                        <p style="margin-top: 15px;">Try lowering the minimum spread percentage or scanning at a different time when market volatility is higher.</p>
                         <div style="margin-top: 15px; font-size: 0.9rem; opacity: 0.8;">
-                            📊 Scanned <strong>${Object.keys(livePrices).length}</strong> coins from CoinGecko
+                            📊 Scanned <strong>${Object.keys(livePrices).length}</strong> coins across 4 exchanges
                         </div>
-                        <div class="api-badge">
-                            📈 Powered by CoinGecko API
+                        <div class="warning-badge">
+                            ⚠️ Real exchange data - opportunities are rare in efficient markets
                         </div>
                     </div>
                 `;
@@ -747,7 +840,7 @@
             }
 
             container.innerHTML = opportunities.map(opp => {
-                const profitClass = parseFloat(opp.netSpread) > 3 ? 'high' : '';
+                const profitClass = parseFloat(opp.netSpread) > 2 ? 'high' : '';
                 const changeClass = opp.coin.percent_change_24h >= 0 ? 'positive' : 'negative';
                 const changeSign = opp.coin.percent_change_24h >= 0 ? '+' : '';
                 
@@ -758,7 +851,6 @@
                                 <h3>${opp.coin.name} (${opp.coin.symbol})</h3>
                                 <div class="coin-details">
                                     Rank: <strong>#${opp.coin.rank}</strong><br>
-                                    Live Price: <span class="coin-price">$${formatPrice(opp.coin.price)}</span><br>
                                     24h Change: <span class="price-change ${changeClass}">${changeSign}${opp.coin.percent_change_24h.toFixed(2)}%</span><br>
                                     Market Cap: $${formatNumber(opp.coin.market_cap)} • Volume: $${formatNumber(opp.coin.volume_24h)}
                                 </div>
@@ -778,7 +870,7 @@
                             <div class="arrow">→</div>
                             <div class="exchange">
                                 <div class="exchange-name">${opp.sellExchange}</div>
-                                <div class="exchange-price">${formatPrice(opp.sellPrice)}</div>
+                                <div class="exchange-price">$${formatPrice(opp.sellPrice)}</div>
                                 <span class="exchange-label sell-label">SELL</span>
                             </div>
                         </div>
@@ -786,11 +878,11 @@
                         <div class="profit-breakdown">
                             <div class="profit-item">
                                 <div class="profit-item-label">Profit on $1K</div>
-                                <div class="profit-item-value">${(1000 * parseFloat(opp.netSpread) / 100).toFixed(2)}</div>
+                                <div class="profit-item-value">$${(1000 * parseFloat(opp.netSpread) / 100).toFixed(2)}</div>
                             </div>
                             <div class="profit-item">
                                 <div class="profit-item-label">Profit on $5K</div>
-                                <div class="profit-item-value">${(5000 * parseFloat(opp.netSpread) / 100).toFixed(2)}</div>
+                                <div class="profit-item-value">$${(5000 * parseFloat(opp.netSpread) / 100).toFixed(2)}</div>
                             </div>
                             <div class="profit-item">
                                 <div class="profit-item-label">Gross Spread</div>
@@ -804,18 +896,14 @@
                                 <div class="profit-item-label">Confidence</div>
                                 <div class="profit-item-value">${opp.confidence}%</div>
                             </div>
-                            <div class="profit-item">
-                                <div class="profit-item-label">Est. Time</div>
-                                <div class="profit-item-value">${opp.estimatedTime}min</div>
-                            </div>
                         </div>
 
                         <div class="last-updated">
-                            🔴 LIVE • CoinGecko Data • Updated ${new Date(opp.lastUpdated).toLocaleTimeString()}
+                            🔴 LIVE • Real Exchange Data • ${new Date(opp.lastUpdated).toLocaleTimeString()}
                         </div>
                         
-                        <div class="api-badge">
-                            📈 Real-time data from CoinGecko
+                        <div class="warning-badge">
+                            ⚠️ Verify prices on exchanges before trading. Prices change rapidly.
                         </div>
                     </div>
                 `;
@@ -864,122 +952,12 @@
             return num ? num.toFixed(0) : '0';
         }
 
-        function startAutoRefresh() {
-            const refreshInterval = setInterval(async () => {
-                if (!document.getElementById('scanBtn').disabled && Object.keys(livePrices).length > 0) {
-                    console.log('🔄 Auto-refreshing market data...');
-                    const success = await fetchLivePrices();
-                    if (success) {
-                        opportunities = generateArbitrageOpportunities();
-                        displayOpportunities();
-                        updateStats();
-                        console.log('✅ Auto-refresh completed');
-                    }
-                }
-            }, 300000);
-
-            return refreshInterval;
-        }
-
-        document.getElementById('minSpread').addEventListener('input', debounce(() => {
-            if (Object.keys(livePrices).length > 0) {
-                opportunities = generateArbitrageOpportunities();
-                displayOpportunities();
-                updateStats();
-            }
-        }, 500));
-
-        document.getElementById('coinLimit').addEventListener('change', () => {
-            if (Object.keys(livePrices).length > 0) {
-                scanMarkets();
-            }
-        });
-
-        document.getElementById('volumeFilter').addEventListener('change', () => {
-            if (Object.keys(livePrices).length > 0) {
-                opportunities = generateArbitrageOpportunities();
-                displayOpportunities();
-                updateStats();
-            }
-        });
-
-        document.getElementById('maxResults').addEventListener('change', () => {
-            if (Object.keys(livePrices).length > 0) {
-                opportunities = generateArbitrageOpportunities();
-                displayOpportunities();
-                updateStats();
-            }
-        });
-
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                scanMarkets();
-            }
-        });
-
-        async function initializeApp() {
-            console.log('🚀 Initializing CoinGecko Arbitrage Scanner...');
-            
-            const refreshInterval = startAutoRefresh();
-            
-            setTimeout(() => {
-                scanMarkets();
-            }, 1000);
-
-            window.addEventListener('beforeunload', function() {
-                clearInterval(refreshInterval);
-            });
-        }
-
-        window.addEventListener('load', function() {
-            console.log('📱 CoinGecko Arbitrage Scanner loaded');
-            initializeApp();
-        });
-
-        let performanceMetrics = {
-            totalScans: 0,
-            totalOpportunities: 0,
-            avgResponseTime: 0
-        };
-
-        const originalScanMarkets = scanMarkets;
-        window.scanMarkets = async function() {
-            const startTime = performance.now();
-            performanceMetrics.totalScans++;
-            
-            console.log(`🔄 CoinGecko scan #${performanceMetrics.totalScans} started`);
-            
-            try {
-                await originalScanMarkets();
-                
-                const responseTime = performance.now() - startTime;
-                performanceMetrics.avgResponseTime = 
-                    (performanceMetrics.avgResponseTime + responseTime) / 2;
-                performanceMetrics.totalOpportunities += opportunities.length;
-                
-                console.log(`✅ Scan completed in ${responseTime.toFixed(2)}ms`);
-                console.log(`📊 Found ${opportunities.length} opportunities`);
-                console.log(`📈 Total opportunities found: ${performanceMetrics.totalOpportunities}`);
-                console.log(`🔧 API calls made: ${apiCallCount}`);
-                
-            } catch (error) {
-                console.error('❌ Scan failed:', error);
-            }
-        };
+        // Auto-initialization removed - user must click "Scan Live Markets" button
+        
+        console.log('📱 Crypto Arbitrage Scanner loaded - using REAL exchange APIs');
+        console.log('⚡ Click "Scan Live Markets" to start scanning');
     </script>
+
     <!-- Footer -->
     <footer style="text-align: center; padding: 40px 20px; margin-top: 50px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
         <p style="color: #a0a0a0; font-size: 0.9rem; margin-bottom: 15px;">
@@ -990,8 +968,9 @@
             <span style="color: #666;">|</span>
             <a href="/privacy/" style="color: #00d2ff; text-decoration: none; font-size: 0.9rem;">Terms of Service</a>
         </div>
+        <p style="color: #666; font-size: 0.8rem; margin-top: 15px;">
+            ⚠️ Real exchange data. Always verify prices before trading.
+        </p>
     </footer>
-</body>
-</html>
 </body>
 </html>
