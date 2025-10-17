@@ -533,7 +533,7 @@
 
     <script>
         // CORS Proxy to bypass browser restrictions
-        const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+        const CORS_PROXY = 'https://corsproxy.io/?';
         
         // Real Exchange APIs
         const EXCHANGES = {
@@ -621,7 +621,7 @@
         }
 
         // Timeout wrapper for API calls
-        async function fetchWithTimeout(url, timeout = 3000) {
+        async function fetchWithTimeout(url, timeout = 5000) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), timeout);
             
