@@ -28,6 +28,30 @@ const EXCHANGES = {
         fee: 0.2,
         url: (symbol) => `https://api.mexc.com/api/v3/ticker/price?symbol=${symbol}USDT`,
         parsePrice: (data) => data.price ? parseFloat(data.price) : null
+    },
+    bybit: {
+        name: 'Bybit',
+        fee: 0.1,
+        url: (symbol) => `https://api.bybit.com/v5/market/tickers?category=spot&symbol=${symbol}USDT`,
+        parsePrice: (data) => data?.result?.list?.[0]?.lastPrice ? parseFloat(data.result.list[0].lastPrice) : null
+    },
+    okx: {
+        name: 'OKX',
+        fee: 0.1,
+        url: (symbol) => `https://www.okx.com/api/v5/market/ticker?instId=${symbol}-USDT`,
+        parsePrice: (data) => data?.data?.[0]?.last ? parseFloat(data.data[0].last) : null
+    },
+    huobi: {
+        name: 'Huobi',
+        fee: 0.2,
+        url: (symbol) => `https://api.huobi.pro/market/detail/merged?symbol=${symbol.toLowerCase()}usdt`,
+        parsePrice: (data) => data?.tick?.close ? parseFloat(data.tick.close) : null
+    },
+    bitget: {
+        name: 'Bitget',
+        fee: 0.1,
+        url: (symbol) => `https://api.bitget.com/api/spot/v1/market/ticker?symbol=${symbol}USDT`,
+        parsePrice: (data) => data?.data?.close ? parseFloat(data.data.close) : null
     }
 };
 
@@ -104,7 +128,11 @@ exports.handler = async (event, context) => {
                 fetchExchangePrice(EXCHANGES.binance, symbol),
                 fetchExchangePrice(EXCHANGES.kucoin, symbol),
                 fetchExchangePrice(EXCHANGES.gateio, symbol),
-                fetchExchangePrice(EXCHANGES.mexc, symbol)
+                fetchExchangePrice(EXCHANGES.mexc, symbol),
+                fetchExchangePrice(EXCHANGES.bybit, symbol),
+                fetchExchangePrice(EXCHANGES.okx, symbol),
+                fetchExchangePrice(EXCHANGES.huobi, symbol),
+                fetchExchangePrice(EXCHANGES.bitget, symbol)
             ]);
 
             results[symbol] = {
@@ -112,6 +140,10 @@ exports.handler = async (event, context) => {
                 kucoin: prices[1],
                 gateio: prices[2],
                 mexc: prices[3],
+                bybit: prices[4],
+                okx: prices[5],
+                huobi: prices[6],
+                bitget: prices[7],
                 timestamp: Date.now()
             };
 
