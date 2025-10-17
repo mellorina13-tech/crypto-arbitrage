@@ -532,6 +532,9 @@
     </div>
 
     <script>
+        // CORS Proxy to bypass browser restrictions
+        const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+        
         // Real Exchange APIs
         const EXCHANGES = {
             binance: {
@@ -623,7 +626,9 @@
             const timeoutId = setTimeout(() => controller.abort(), timeout);
             
             try {
-                const response = await fetch(url, { signal: controller.signal });
+                // Use CORS proxy for browser requests
+                const proxyUrl = CORS_PROXY + encodeURIComponent(url);
+                const response = await fetch(proxyUrl, { signal: controller.signal });
                 clearTimeout(timeoutId);
                 return response;
             } catch (error) {
