@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1a1a2e"
+    tools:context=".MainActivity">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Header -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🚀 Crypto Arbitrage Scanner"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:gravity="center"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Real-time prices from 8 exchanges"
+                android:textSize="14sp"
+                android:textColor="#a0a0a0"
+                android:gravity="center"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- Status -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:padding="12dp"
+                android:background="@android:color/transparent"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:id="@+id/statusText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ready to scan"
+                    android:textColor="#4caf50"
+                    android:textSize="14sp"/>
+            </LinearLayout>
+
+            <!-- Stats Grid -->
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="3"
+                android:rowCount="2"
+                android:alignmentMode="alignBounds"
+                android:layout_marginBottom="16dp">
+
+                <!-- Opportunities Count -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:orientation="vertical"
+                    android:background="#1e1e3f"
+                    android:padding="12dp"
+                    android:layout_margin="4dp"
+                    android:gravity="center">
+
+                    <TextView
+                        android:id="@+id/opportunitiesCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="28sp"
+                        android:textStyle="bold"
+                        android:textColor="#00d2ff"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Opportunities"
+                        android:textSize="12sp"
+                        android:textColor="#a0a0a0"/>
+                </LinearLayout>
+
+                <!-- Best Spread -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:orientation="vertical"
+                    android:background="#1e1e3f"
+                    android:padding="12dp"
+                    android:layout_margin="4dp"
+                    android:gravity="center">
+
+                    <TextView
+                        android:id="@+id/bestSpread"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0%"
+                        android:textSize="28sp"
+                        android:textStyle="bold"
+                        android:textColor="#00d2ff"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Best Spread"
+                        android:textSize="12sp"
+                        android:textColor="#a0a0a0"/>
+                </LinearLayout>
+
+                <!-- Coins Tracked -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:orientation="vertical"
+                    android:background="#1e1e3f"
+                    android:padding="12dp"
+                    android:layout_margin="4dp"
+                    android:gravity="center">
+
+                    <TextView
+                        android:id="@+id/coinsTracked"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="28sp"
+                        android:textStyle="bold"
+                        android:textColor="#00d2ff"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Coins Tracked"
+                        android:textSize="12sp"
+                        android:textColor="#a0a0a0"/>
+                </LinearLayout>
+            </GridLayout>
+
+            <!-- Controls -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#1e1e3f"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Scan Settings"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="12dp"/>
+
+                <!-- Min Spread -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Minimum Spread %"
+                    android:textColor="#a0a0a0"
+                    android:textSize="12sp"
+                    android:layout_marginBottom="4dp"/>
+
+                <EditText
+                    android:id="@+id/minSpreadInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="#0f3460"
+                    android:text="0.1"
+                    android:inputType="numberDecimal"
+                    android:textColor="@android:color/white"
+                    android:padding="12dp"
+                    android:layout_marginBottom="12dp"/>
+
+                <!-- Coin Limit -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Coins to Scan"
+                    android:textColor="#a0a0a0"
+                    android:textSize="12sp"
+                    android:layout_marginBottom="4dp"/>
+
+                <Spinner
+                    android:id="@+id/coinLimitSpinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="#0f3460"
+                    android:layout_marginBottom="12dp"/>
+
+                <!-- Volume Filter -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Minimum Volume"
+                    android:textColor="#a0a0a0"
+                    android:textSize="12sp"
+                    android:layout_marginBottom="4dp"/>
+
+                <Spinner
+                    android:id="@+id/volumeFilterSpinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="#0f3460"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- Scan Button -->
+                <Button
+                    android:id="@+id/scanButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="⚡ Scan Live Markets"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold"
+                    android:background="#00d2ff"
+                    android:textSize="16sp"/>
+            </LinearLayout>
+
+            <!-- Progress Bar -->
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:layout_marginBottom="16dp"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:indeterminate="true"/>
+
+            <!-- Opportunities List -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:paddingBottom="80dp"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- AdMob Banner at bottom -->
+    <com.google.android.gms.ads.AdView
+        android:id="@+id/adView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        app:adSize="BANNER"
+        app:adUnitId="ca-app-pub-3940256099942544/6300978111"/>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

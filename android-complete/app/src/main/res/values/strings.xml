@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Crypto Arbitrage</string>
+    <string name="scan_markets">Scan Live Markets</string>
+    <string name="scanning">Scanning…</string>
+    <string name="ready_to_scan">Ready to scan</string>
+    <string name="fetching_prices">Fetching live prices from 8 exchanges…</string>
+    <string name="opportunities_found">opportunities found</string>
+    <string name="no_opportunities">No profitable opportunities found</string>
+    <string name="error_network">Network error. Please check your connection.</string>
+    <string name="error_api">Failed to fetch data from API</string>
+    <string name="min_spread">Minimum Spread %</string>
+    <string name="coins_to_scan">Coins to Scan</string>
+    <string name="min_volume">Minimum Volume</string>
+    <string name="buy">BUY</string>
+    <string name="sell">SELL</string>
+    <string name="net_profit">Net Profit</string>
+    <string name="gross_spread">Gross Spread</string>
+    <string name="total_fees">Total Fees</string>
+    <string name="confidence">Confidence</string>
+    <string name="estimated_time">Est. Time</string>
+    <string name="warning_verify">⚠️ Verify prices on exchanges before trading</string>
+</resources>
