@@ -1,613 +1,245 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Arbitrage Scanner - Find Profitable Price Differences Across 8 Exchanges | Free Real-Time Tool</title>
+    <title>Crypto Arbitrage Scanner | Pro Terminal</title>
     
-    <!-- SEO Meta -->
-    <meta name="description" content="Free crypto arbitrage scanner that compares real-time prices across Binance, KuCoin, Gate.io, MEXC, Bybit, OKX, Huobi & Bitget. Find profitable trading opportunities instantly. Track up to 250 cryptocurrencies.">
-    <meta name="keywords" content="crypto arbitrage, cryptocurrency arbitrage scanner, bitcoin arbitrage, crypto price comparison, arbitrage trading tool, binance arbitrage, crypto trading bot, real-time crypto prices, cryptocurrency price differences">
+    <meta name="description" content="Professional crypto arbitrage scanner. Monitor 8 exchanges in real-time: Binance, KuCoin, Gate.io, MEXC, Bybit, OKX, Huobi & Bitget.">
+    <meta name="keywords" content="crypto arbitrage, arbitrage scanner, trading bot, binance arbitrage, crypto tools">
     <meta name="author" content="KarziTech">
-    <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://crypto-arbitrage.app/">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://crypto-arbitrage.app/">
-    <meta property="og:title" content="Free Crypto Arbitrage Scanner - Compare Prices Across 8 Exchanges">
-    <meta property="og:description" content="Find profitable crypto arbitrage opportunities in real-time. Compare prices across Binance, KuCoin, Gate.io, MEXC, Bybit, OKX, Huobi & Bitget. Free to use!">
-    <meta property="og:image" content="https://crypto-arbitrage.app/og-image.png">
-    
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://crypto-arbitrage.app/">
-    <meta property="twitter:title" content="Free Crypto Arbitrage Scanner - Real-Time Price Comparison">
-    <meta property="twitter:description" content="Find profitable crypto arbitrage opportunities across 8 major exchanges. Free real-time scanner with live market data.">
-    <meta property="twitter:image" content="https://crypto-arbitrage.app/twitter-image.png">
-    
-    <!-- Additional SEO -->
-    <meta name="language" content="English">
-    <meta name="revisit-after" content="1 days">
-    <meta name="distribution" content="global">
-    <meta name="rating" content="general">
-    
-    <!-- Structured Data for Google -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Crypto Arbitrage Scanner",
-      "description": "Free real-time crypto arbitrage scanner comparing prices across 8 major cryptocurrency exchanges",
-      "url": "https://crypto-arbitrage.app",
-      "applicationCategory": "FinanceApplication",
-      "operatingSystem": "Web Browser",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "ratingCount": "127"
-      }
-    }
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        dark: '#0B1120', // Deepest Slate
+                        panel: '#151e32', // Panel Background
+                        accent: '#06b6d4', // Cyan
+                        profit: '#10b981', // Emerald
+                        loss: '#ef4444', // Red
+                    },
+                    backgroundImage: {
+                        'grid-pattern': "linear-gradient(to right, #1f2937 1px, transparent 1px), linear-gradient(to bottom, #1f2937 1px, transparent 1px)",
+                    }
+                }
+            }
+        }
     </script>
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0B1120; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Background Grid Animation */
+        .bg-grid {
+            background-size: 40px 40px;
+            mask-image: linear-gradient(to bottom, transparent, 10%, white, 90%, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, 5%, black, 95%, transparent);
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            min-height: 100vh;
-            color: #fff;
-            padding: 15px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .header h1 {
-            font-size: 2.2rem;
-            margin-bottom: 8px;
-            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: none;
-        }
-
-        .header .subtitle {
-            color: #a0a0a0;
-            margin-bottom: 15px;
-        }
-
-        .api-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(76, 175, 80, 0.15);
-            border: 1px solid #4caf50;
-            border-radius: 20px;
-            padding: 8px 16px;
-            font-size: 0.9rem;
-            color: #4caf50;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background: #4caf50;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
-
-        .status-dot.loading {
-            background: #ffc107;
-        }
-
-        .status-dot.error {
-            background: #f44336;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(1.1); }
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 18px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .stat-value {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #00d2ff;
-            margin-bottom: 4px;
-        }
-
-        .stat-label {
-            color: #a0a0a0;
-            font-size: 0.85rem;
-        }
-
-        .price-ticker {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 20px;
+        /* Ticker Animation */
+        .ticker-wrap {
             overflow: hidden;
             white-space: nowrap;
         }
-
         .ticker-content {
             display: inline-block;
-            animation: scroll 60s linear infinite;
-            font-size: 0.9rem;
+            animation: ticker 60s linear infinite;
+        }
+        @keyframes ticker {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
         }
 
-        @keyframes scroll {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
+        /* Input Styles */
+        select, input {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
         }
-
-        .controls {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .control-row {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            min-width: 120px;
-        }
-
-        label {
-            font-size: 0.85rem;
-            color: #a0a0a0;
-            font-weight: 500;
-        }
-
-        input, select {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #fff;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: #00d2ff;
-            box-shadow: 0 0 0 2px rgba(0, 210, 255, 0.2);
-        }
-
-        .scan-btn {
-            background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
-            color: #fff;
-            border: none;
-            padding: 12px 28px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
-            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3);
-        }
-
-        .scan-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 210, 255, 0.4);
-        }
-
-        .scan-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .opportunities-grid {
-            display: grid;
-            gap: 18px;
-        }
-
-        .opportunity {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(15px);
-            border-radius: 15px;
-            padding: 22px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .opportunity::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .opportunity:hover {
-            transform: translateY(-3px);
-            border-color: rgba(0, 210, 255, 0.4);
-            box-shadow: 0 8px 25px rgba(0, 210, 255, 0.15);
-        }
-
-        .opportunity:hover::before {
-            opacity: 1;
-        }
-
-        .opp-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 18px;
-        }
-
-        .coin-info h3 {
-            font-size: 1.25rem;
-            margin-bottom: 8px;
-            color: #fff;
-        }
-
-        .coin-details {
-            font-size: 0.85rem;
-            color: #a0a0a0;
-            line-height: 1.4;
-        }
-
-        .coin-price {
-            font-weight: 600;
-            color: #00d2ff;
-        }
-
-        .price-change {
-            font-weight: 600;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-        }
-
-        .price-change.positive {
-            background: rgba(76, 175, 80, 0.2);
-            color: #4caf50;
-        }
-
-        .price-change.negative {
-            background: rgba(244, 67, 54, 0.2);
-            color: #f44336;
-        }
-
-        .profit-display {
-            text-align: right;
-        }
-
-        .profit-percentage {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #4caf50;
-            margin-bottom: 4px;
-        }
-
-        .profit-percentage.high {
-            color: #00ff88;
-            animation: pulse-glow 2s infinite;
-        }
-
-        @keyframes pulse-glow {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        .exchanges {
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            gap: 18px;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-            padding: 18px;
-            margin: 15px 0;
-        }
-
-        .exchange {
-            text-align: center;
-            padding: 14px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .exchange-name {
-            font-weight: 600;
-            color: #00d2ff;
-            margin-bottom: 8px;
-            font-size: 0.95rem;
-        }
-
-        .exchange-price {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 6px;
-            color: #fff;
-        }
-
-        .exchange-label {
-            font-size: 0.75rem;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-weight: 600;
-        }
-
-        .buy-label {
-            background: rgba(76, 175, 80, 0.25);
-            color: #4caf50;
-            border: 1px solid rgba(76, 175, 80, 0.5);
-        }
-
-        .sell-label {
-            background: rgba(244, 67, 54, 0.25);
-            color: #f44336;
-            border: 1px solid rgba(244, 67, 54, 0.5);
-        }
-
-        .arrow {
-            font-size: 1.8rem;
-            color: #00d2ff;
-            animation: moveArrow 2s ease-in-out infinite;
-        }
-
-        @keyframes moveArrow {
-            0%, 100% { transform: translateX(0); }
-            50% { transform: translateX(8px); }
-        }
-
-        .profit-breakdown {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-            gap: 12px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-        }
-
-        .profit-item {
-            font-size: 0.8rem;
-        }
-
-        .profit-item-label {
-            color: #a0a0a0;
-            margin-bottom: 3px;
-        }
-
-        .profit-item-value {
-            font-weight: 600;
-            color: #4caf50;
-        }
-
-        .loading, .no-results {
-            text-align: center;
-            padding: 40px 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 24px;
-            height: 24px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #00d2ff;
-            animation: spin 1s ease-in-out infinite;
-            margin-bottom: 15px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .last-updated {
-            font-size: 0.75rem;
-            color: #4caf50;
-            margin-top: 8px;
-            text-align: center;
-        }
-
-        .api-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px solid #8b5cf6;
-            border-radius: 15px;
-            padding: 6px 12px;
-            font-size: 0.8rem;
-            color: #8b5cf6;
-            margin-top: 10px;
-        }
-
-        .warning-badge {
-            background: rgba(255, 152, 0, 0.15);
-            border: 1px solid #ff9800;
-            color: #ff9800;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            margin-top: 10px;
-            display: inline-block;
-        }
-
-        @media (max-width: 768px) {
-            .header h1 { font-size: 1.8rem; }
-            .exchanges { 
-                grid-template-columns: 1fr; 
-                gap: 12px;
-            }
-            .arrow { 
-                transform: rotate(90deg); 
-                animation: none; 
-            }
-            .control-row { 
-                flex-direction: column; 
-                align-items: stretch; 
-            }
-            .control-group { 
-                min-width: auto; 
-            }
-        }
+        input[type="number"] { background-image: none; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🚀 Free Crypto Arbitrage Scanner - Real-Time Price Comparison Tool</h1>
-            <p class="subtitle">Compare cryptocurrency prices across 8 major exchanges instantly. Find profitable arbitrage opportunities with live market data from Binance, KuCoin, Gate.io, MEXC, Bybit, OKX, Huobi & Bitget.</p>
-            <div class="api-status" id="apiStatus">
-                <div class="status-dot" id="statusDot"></div>
-                <span id="statusText">Connecting to exchanges...</span>
+<body class="bg-dark text-slate-300 font-sans min-h-screen flex flex-col relative overflow-x-hidden selection:bg-accent selection:text-white">
+
+    <div class="fixed inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none bg-grid z-0"></div>
+
+    <nav class="border-b border-slate-800 bg-dark/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-lg shadow-cyan-500/20">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <h1 class="font-bold text-lg tracking-tight text-white">Arbitrage<span class="text-accent">Scanner</span> <span class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700 ml-2 font-mono">PRO</span></h1>
+            </div>
+            
+            <div id="apiStatus" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-700 transition-colors">
+                <div id="statusDot" class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
+                <span id="statusText" class="text-xs font-mono font-medium text-slate-400">Connecting...</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow container max-w-7xl mx-auto px-4 py-8 relative z-10">
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+            <div class="bg-panel border border-slate-800 p-4 rounded-xl relative overflow-hidden group hover:border-slate-700 transition-all">
+                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Opportunities</div>
+                <div id="opportunitiesCount" class="text-2xl font-mono font-bold text-white group-hover:text-accent transition-colors">0</div>
+                <i class="fa-solid fa-bolt absolute right-3 bottom-3 text-slate-800 text-4xl group-hover:text-slate-700/50 transition-colors"></i>
+            </div>
+            
+            <div class="bg-panel border border-slate-800 p-4 rounded-xl relative overflow-hidden">
+                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Best Spread</div>
+                <div id="bestSpread" class="text-2xl font-mono font-bold text-profit">0%</div>
+                <i class="fa-solid fa-chart-line absolute right-3 bottom-3 text-slate-800 text-4xl"></i>
+            </div>
+
+            <div class="bg-panel border border-slate-800 p-4 rounded-xl relative overflow-hidden">
+                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Coins Scanned</div>
+                <div id="coinsTracked" class="text-2xl font-mono font-bold text-white">0</div>
+                <i class="fa-solid fa-coins absolute right-3 bottom-3 text-slate-800 text-4xl"></i>
+            </div>
+
+            <div class="bg-panel border border-slate-800 p-4 rounded-xl relative overflow-hidden">
+                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">API Requests</div>
+                <div id="apiCalls" class="text-2xl font-mono font-bold text-slate-400">0</div>
+                <i class="fa-solid fa-server absolute right-3 bottom-3 text-slate-800 text-4xl"></i>
+            </div>
+
+            <div class="bg-panel border border-slate-800 p-4 rounded-xl relative overflow-hidden">
+                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Last Update</div>
+                <div id="lastUpdate" class="text-xl font-mono font-bold text-white">--:--</div>
+                <i class="fa-regular fa-clock absolute right-3 bottom-3 text-slate-800 text-4xl"></i>
             </div>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-value" id="opportunitiesCount">0</div>
-                <div class="stat-label">Live Opportunities</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="bestSpread">0%</div>
-                <div class="stat-label">Best Spread</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="coinsTracked">0</div>
-                <div class="stat-label">Coins Tracked</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="apiCalls">0</div>
-                <div class="stat-label">API Calls</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="lastUpdate">--:--</div>
-                <div class="stat-label">Last Update</div>
+        <div class="w-full bg-slate-900/50 border-y border-slate-800 h-10 mb-8 flex items-center overflow-hidden relative">
+            <div class="absolute left-0 bg-dark z-10 px-2 h-full flex items-center border-r border-slate-800 text-xs font-bold text-accent">LIVE FEED</div>
+            <div class="ticker-wrap" id="priceTicker">
+                <div class="ticker-content font-mono text-xs text-slate-400 py-2 pl-4" id="tickerContent">
+                    System Initializing... Waiting for data stream...
+                </div>
             </div>
         </div>
 
-        <div class="price-ticker" id="priceTicker">
-            <div class="ticker-content" id="tickerContent">
-                Initializing live price feed...
-            </div>
-        </div>
+        <div class="bg-panel border border-slate-800 rounded-2xl p-6 mb-8 shadow-2xl shadow-black/50">
+            <div class="flex flex-col md:flex-row gap-6 items-end">
+                
+                <div class="w-full md:w-auto flex-grow grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="flex flex-col gap-2">
+                        <label for="minSpread" class="text-xs font-bold text-slate-400 uppercase">Min Profit %</label>
+                        <div class="relative">
+                            <input type="number" id="minSpread" value="0.1" min="0.01" max="20" step="0.01" 
+                                class="w-full bg-dark border border-slate-700 rounded-lg py-2.5 px-4 text-white font-mono focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all">
+                            <span class="absolute right-4 top-2.5 text-slate-600 font-mono">%</span>
+                        </div>
+                    </div>
 
-        <div class="controls">
-            <div class="control-row">
-                <div class="control-group">
-                    <label for="minSpread">Min Spread %</label>
-                    <input type="number" id="minSpread" value="0.1" min="0.01" max="20" step="0.01">
+                    <div class="flex flex-col gap-2">
+                        <label for="coinLimit" class="text-xs font-bold text-slate-400 uppercase">Market Depth</label>
+                        <select id="coinLimit" 
+                            class="w-full bg-dark border border-slate-700 rounded-lg py-2.5 px-4 text-white font-mono focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all">
+                            <option value="10">Top 10 Coins (Instant)</option>
+                            <option value="25">Top 25 Coins</option>
+                            <option value="50" selected>Top 50 Coins</option>
+                            <option value="100">Top 100 Coins</option>
+                            <option value="250">Top 250 Coins (Slow)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label for="volumeFilter" class="text-xs font-bold text-slate-400 uppercase">Min Volume (24h)</label>
+                        <select id="volumeFilter" 
+                            class="w-full bg-dark border border-slate-700 rounded-lg py-2.5 px-4 text-white font-mono focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all">
+                            <option value="0">All Volumes</option>
+                            <option value="1000000" selected>$1,000,000+</option>
+                            <option value="10000000">$10,000,000+</option>
+                            <option value="100000000">$100,000,000+</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label for="coinLimit">Coins to Scan</label>
-                    <select id="coinLimit">
-                        <option value="10">Top 10 (Fast)</option>
-                        <option value="25">Top 25</option>
-                        <option value="50" selected>Top 50</option>
-                        <option value="100">Top 100</option>
-                        <option value="250">Top 250</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label for="volumeFilter">Min Volume</label>
-                    <select id="volumeFilter">
-                        <option value="0">No Minimum</option>
-                        <option value="1000000" selected>$1M+</option>
-                        <option value="10000000">$10M+</option>
-                        <option value="100000000">$100M+</option>
-                    </select>
-                </div>
-                <button class="scan-btn" onclick="scanMarkets()" id="scanBtn">
-                    <span>⚡</span> Scan Live Markets
+
+                <button onclick="scanMarkets()" id="scanBtn" 
+                    class="w-full md:w-auto px-8 py-3 bg-accent hover:bg-cyan-400 text-dark font-bold rounded-lg shadow-lg shadow-cyan-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-radar"></i>
+                    SCAN MARKETS
                 </button>
             </div>
         </div>
 
-        <div class="opportunities-grid" id="opportunitiesContainer">
-            <div class="loading">
-                <div class="spinner"></div>
-                <h3>Connecting to Exchanges</h3>
-                <p>Fetching real-time cryptocurrency data from multiple exchanges...</p>
+        <div id="opportunitiesContainer" class="grid grid-cols-1 gap-4">
+            <div class="text-center py-20 border border-dashed border-slate-800 rounded-2xl bg-slate-900/30">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-800 flex items-center justify-center text-slate-600">
+                    <i class="fa-solid fa-satellite-dish text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-300">Ready to Scan</h3>
+                <p class="text-slate-500 text-sm max-w-md mx-auto mt-2">
+                    Click the scan button to fetch real-time prices from 8 exchanges and calculate profitable arbitrage paths.
+                </p>
             </div>
         </div>
-    </div>
+
+    </main>
+
+    <footer class="border-t border-slate-800 bg-dark mt-12 py-12">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <div class="grid md:grid-cols-2 gap-8 text-left mb-12">
+                <div>
+                    <h3 class="text-white font-bold mb-4">About the Scanner</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed">
+                        This tool connects directly to public APIs of major exchanges (Binance, KuCoin, Gate.io, etc.) via a serverless backend to bypass CORS. It calculates the spread after estimated trading fees (0.1% - 0.2%) to show net profit potential.
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-white font-bold mb-4">Disclaimer</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed">
+                        Crypto trading involves significant risk. Prices on this dashboard may differ slightly from execution prices due to market volatility and order book depth. Always verify manually before executing trades.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex justify-center gap-6 text-sm text-slate-400 mb-6">
+                <a href="#" class="hover:text-accent transition-colors">Privacy Policy</a>
+                <a href="#" class="hover:text-accent transition-colors">Terms of Service</a>
+                <a href="#" class="hover:text-accent transition-colors">Contact</a>
+            </div>
+            
+            <p class="text-xs text-slate-600">© 2025 KarziTech • Built for Traders</p>
+        </div>
+    </footer>
 
     <script>
-        // Netlify Function API endpoint
         const API_ENDPOINT = '/.netlify/functions/get-prices';
         
-        // Exchange fee information (for profit calculation)
         const EXCHANGE_FEES = {
-            binance: 0.1,
-            kucoin: 0.1,
-            gateio: 0.2,
-            mexc: 0.2,
-            bybit: 0.1,
-            okx: 0.1,
-            huobi: 0.2,
-            bitget: 0.1
+            binance: 0.1, kucoin: 0.1, gateio: 0.2, mexc: 0.2,
+            bybit: 0.1, okx: 0.1, huobi: 0.2, bitget: 0.1
         };
 
         const EXCHANGE_NAMES = {
-            binance: 'Binance',
-            kucoin: 'KuCoin',
-            gateio: 'Gate.io',
-            mexc: 'MEXC',
-            bybit: 'Bybit',
-            okx: 'OKX',
-            huobi: 'Huobi',
-            bitget: 'Bitget'
+            binance: 'Binance', kucoin: 'KuCoin', gateio: 'Gate.io', mexc: 'MEXC',
+            bybit: 'Bybit', okx: 'OKX', huobi: 'Huobi', bitget: 'Bitget'
         };
 
         const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
@@ -617,169 +249,125 @@
         let apiCallCount = 0;
         let lastUpdateTime = null;
 
+        // --- Status Helpers ---
         function updateApiStatus(status, message) {
             const statusDot = document.getElementById('statusDot');
             const statusText = document.getElementById('statusText');
+            const apiStatusEl = document.getElementById('apiStatus');
             
-            statusDot.className = `status-dot ${status}`;
             statusText.textContent = message;
             
-            const apiStatusEl = document.getElementById('apiStatus');
-            apiStatusEl.style.borderColor = status === 'online' ? '#4caf50' : 
-                                           status === 'loading' ? '#ffc107' : '#f44336';
+            // Tailwind status updates
+            statusDot.className = 'w-2 h-2 rounded-full animate-pulse ';
+            if (status === 'online') {
+                statusDot.classList.add('bg-green-500');
+                apiStatusEl.classList.add('border-green-900/50', 'bg-green-900/10');
+                apiStatusEl.classList.remove('border-red-900/50', 'bg-red-900/10');
+            } else if (status === 'error') {
+                statusDot.classList.add('bg-red-500');
+                apiStatusEl.classList.add('border-red-900/50', 'bg-red-900/10');
+            } else {
+                statusDot.classList.add('bg-yellow-500');
+            }
         }
 
-        // Fetch coin list from CoinGecko
+        function formatNumber(num) {
+            if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+            return num ? num.toLocaleString() : '0';
+        }
+
+        function formatPrice(price) {
+            return price < 1 ? price.toFixed(6) : price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
+        // --- Logic Functions (Same Logic, New UI) ---
+        
         async function fetchCoinList() {
             const coinLimit = parseInt(document.getElementById('coinLimit').value);
-            
             try {
-                console.log(`📡 Fetching top ${coinLimit} cryptocurrencies from CoinGecko...`);
-                
                 const url = `${COINGECKO_BASE_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${coinLimit}&page=1&sparkline=false&price_change_percentage=24h`;
-                
                 const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
+                if (!response.ok) throw new Error('Coingecko Error');
                 const data = await response.json();
                 apiCallCount++;
                 
                 livePrices = {};
                 data.forEach((coin, index) => {
                     livePrices[coin.symbol.toUpperCase()] = {
-                        id: coin.id,
-                        name: coin.name,
+                        ...coin,
                         symbol: coin.symbol.toUpperCase(),
-                        market_cap: coin.market_cap,
-                        volume_24h: coin.total_volume,
-                        percent_change_24h: coin.price_change_percentage_24h || 0,
                         rank: index + 1,
                         exchangePrices: {}
                     };
                 });
-                
-                console.log('✅ Coin list received:', Object.keys(livePrices).length, 'coins');
                 return true;
-                
             } catch (error) {
-                console.error('❌ CoinGecko API failed:', error);
+                console.error(error);
                 return false;
             }
         }
 
-        // Fetch prices from all exchanges via Netlify Function
         async function fetchExchangePrices(symbols) {
-            const symbolList = Array.isArray(symbols) ? symbols : [symbols];
-            const symbolString = symbolList.join(',');
-            
             try {
-                console.log(`🔍 Fetching prices for ${symbolList.length} coins from 8 exchanges...`);
-                console.log(`⏱️ With Pro plan timeout (26s), this should complete in one request`);
-                
+                const symbolString = symbols.join(',');
                 const response = await fetch(`${API_ENDPOINT}?symbols=${symbolString}`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
                 const result = await response.json();
-                
-                if (!result.success) {
-                    throw new Error(result.error || 'Unknown error');
+                if (result.success) {
+                    apiCallCount++;
+                    return result.data;
                 }
-                
-                console.log(`✅ Received prices for ${Object.keys(result.data).length} coins from backend`);
-                apiCallCount++;
-                
-                return result.data;
-                
+                return null;
             } catch (error) {
-                console.error('❌ Backend API error:', error);
                 return null;
             }
         }
 
-        // Find real arbitrage opportunities
         async function findRealArbitrageOpportunities() {
-            const opportunities = [];
+            const opps = [];
             const minSpread = parseFloat(document.getElementById('minSpread').value);
             const minVolume = parseFloat(document.getElementById('volumeFilter').value);
-
-            const eligibleCoins = Object.values(livePrices).filter(coin => 
-                coin.volume_24h >= minVolume
-            );
-
-            console.log(`💰 Scanning ${eligibleCoins.length} eligible coins...`);
-
-            // Fetch all prices in one API call (batch request)
-            updateApiStatus('loading', `Fetching prices from exchanges...`);
-            const symbols = eligibleCoins.map(coin => coin.symbol);
+            
+            const eligibleCoins = Object.values(livePrices).filter(c => c.total_volume >= minVolume);
+            
+            updateApiStatus('loading', `Analyzing ${eligibleCoins.length} assets...`);
+            
+            const symbols = eligibleCoins.map(c => c.symbol);
             const allPrices = await fetchExchangePrices(symbols);
 
-            if (!allPrices) {
-                console.error('❌ Failed to fetch prices from backend');
-                return [];
-            }
+            if (!allPrices) return [];
 
-            // Analyze each coin for arbitrage opportunities
             for (const coin of eligibleCoins) {
-                const exchangePrices = allPrices[coin.symbol];
-                
-                if (!exchangePrices) {
-                    console.log(`⚠️ ${coin.symbol}: No data received`);
-                    continue;
-                }
+                const prices = allPrices[coin.symbol];
+                if (!prices) continue;
 
-                coin.exchangePrices = exchangePrices;
-
-                // Filter out null prices
-                const validPrices = Object.entries(exchangePrices)
-                    .filter(([exchange, price]) => price !== null && exchange !== 'timestamp')
+                const validPrices = Object.entries(prices)
+                    .filter(([ex, p]) => p !== null && ex !== 'timestamp')
                     .map(([exchange, price]) => ({ exchange, price }));
 
-                if (validPrices.length < 2) {
-                    console.log(`⚠️ ${coin.symbol}: Not enough exchanges (${validPrices.length})`);
-                    continue;
-                }
+                if (validPrices.length < 2) continue;
 
-                // Find lowest and highest prices
                 validPrices.sort((a, b) => a.price - b.price);
-                const buyExchange = validPrices[0];
-                const sellExchange = validPrices[validPrices.length - 1];
+                const buy = validPrices[0];
+                const sell = validPrices[validPrices.length - 1];
 
-                // Calculate real spread
-                const buyPrice = buyExchange.price;
-                const sellPrice = sellExchange.price;
-                const grossSpreadPercent = ((sellPrice - buyPrice) / buyPrice) * 100;
-
-                // Calculate fees
-                const buyFee = EXCHANGE_FEES[buyExchange.exchange];
-                const sellFee = EXCHANGE_FEES[sellExchange.exchange];
-                const totalFees = buyFee + sellFee;
-
-                // Net spread after fees
-                const netSpread = grossSpreadPercent - totalFees;
-
-                console.log(`📊 ${coin.symbol}: Buy ${buyExchange.exchange} $${buyPrice.toFixed(4)} → Sell ${sellExchange.exchange} $${sellPrice.toFixed(4)} = ${netSpread.toFixed(2)}%`);
+                const grossSpread = ((sell.price - buy.price) / buy.price) * 100;
+                const fees = EXCHANGE_FEES[buy.exchange] + EXCHANGE_FEES[sell.exchange];
+                const netSpread = grossSpread - fees;
 
                 if (netSpread >= minSpread) {
-                    console.log(`✅ OPPORTUNITY: ${coin.symbol} +${netSpread.toFixed(2)}%`);
-                    opportunities.push({
+                    opps.push({
                         coin: coin,
-                        buyExchange: EXCHANGE_NAMES[buyExchange.exchange],
-                        sellExchange: EXCHANGE_NAMES[sellExchange.exchange],
-                        buyPrice: buyPrice,
-                        sellPrice: sellPrice,
-                        grossSpread: grossSpreadPercent.toFixed(2),
-                        netSpread: netSpread.toFixed(2),
-                        totalFees: totalFees.toFixed(2),
-                        confidence: validPrices.length >= 3 ? 95 : 85,
-                        lastUpdated: Date.now()
+                        buy: buy,
+                        sell: sell,
+                        gross: grossSpread.toFixed(2),
+                        net: netSpread.toFixed(2),
+                        fees: fees.toFixed(2),
+                        timestamp: Date.now()
                     });
                 }
             }
-
-            return opportunities.sort((a, b) => parseFloat(b.netSpread) - parseFloat(a.netSpread));
+            return opps.sort((a, b) => b.net - a.net);
         }
 
         async function scanMarkets() {
@@ -787,230 +375,128 @@
             const container = document.getElementById('opportunitiesContainer');
             
             btn.disabled = true;
-            btn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; margin-right: 8px; border-width: 2px;"></div>Scanning...';
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> SCANNING...`;
             
             container.innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <h3>Fetching Real Market Data</h3>
-                    <p>Getting live prices from 8 exchanges (Binance, KuCoin, Gate.io, MEXC, Bybit, OKX, Huobi, Bitget)...</p>
-                    <p style="margin-top: 10px; color: #4caf50;">Analyzing Opportunities...</p>
+                <div class="text-center py-16 animate-pulse">
+                    <div class="text-accent text-xl mb-2 font-mono">ESTABLISHING DATA STREAMS...</div>
+                    <p class="text-slate-500 text-sm">Querying global order books</p>
                 </div>
             `;
 
             try {
-                updateApiStatus('loading', 'Fetching coin list...');
-                const success = await fetchCoinList();
-                if (!success) {
-                    throw new Error('Failed to fetch coin list from CoinGecko');
-                }
-
-                updateApiStatus('loading', 'Scanning exchanges for arbitrage...');
-                opportunities = await findRealArbitrageOpportunities();
+                updateApiStatus('loading', 'Fetching Top Coins...');
+                const listSuccess = await fetchCoinList();
                 
-                console.log('💰 Total opportunities found:', opportunities.length);
-
-                displayOpportunities();
-                updateStats();
-                updateApiStatus('online', `Live • ${opportunities.length} opportunities found`);
-                lastUpdateTime = new Date();
-
-            } catch (error) {
-                console.error('❌ Scan failed:', error);
-                displayError('Failed to scan markets. Please try again.');
-                updateApiStatus('error', 'Scan failed');
+                if (listSuccess) {
+                    opportunities = await findRealArbitrageOpportunities();
+                    displayOpportunities();
+                    updateApiStatus('online', `${opportunities.length} Paths Found`);
+                    lastUpdateTime = new Date();
+                    updateStats();
+                } else {
+                    throw new Error("Data Source Error");
+                }
+            } catch (e) {
+                console.error(e);
+                updateApiStatus('error', 'Connection Failed');
+                container.innerHTML = `<div class="p-8 bg-red-900/20 border border-red-900/50 rounded-xl text-center text-red-400">Scan Failed. Retrying...</div>`;
             }
 
             btn.disabled = false;
-            btn.innerHTML = '<span>⚡</span> Scan Live Markets';
+            btn.innerHTML = `<i class="fa-solid fa-radar"></i> SCAN MARKETS`;
         }
 
+        // --- NEW TAILWIND DISPLAY FUNCTION ---
         function displayOpportunities() {
             const container = document.getElementById('opportunitiesContainer');
             
             if (opportunities.length === 0) {
                 container.innerHTML = `
-                    <div class="no-results">
-                        <h3>🔍 No Profitable Opportunities Found</h3>
-                        <p>Current market conditions show minimal price differences across exchanges.</p>
-                        <p style="margin-top: 15px;">Try lowering the minimum spread percentage or scanning at a different time when market volatility is higher.</p>
-                        <div style="margin-top: 15px; font-size: 0.9rem; opacity: 0.8;">
-                            📊 Scanned <strong>${Object.keys(livePrices).length}</strong> coins across 4 exchanges
-                        </div>
-                        <div class="warning-badge">
-                            ⚠️ Real exchange data - opportunities are rare in efficient markets
-                        </div>
-                    </div>
-                `;
+                    <div class="p-8 bg-slate-900/50 border border-slate-800 rounded-xl text-center">
+                        <i class="fa-solid fa-check-circle text-slate-600 text-3xl mb-4"></i>
+                        <h3 class="text-white font-bold">Markets are Efficient</h3>
+                        <p class="text-slate-500 text-sm">No arbitrage opportunities found above your minimum spread threshold.</p>
+                    </div>`;
                 return;
             }
 
             container.innerHTML = opportunities.map(opp => {
-                const profitClass = parseFloat(opp.netSpread) > 2 ? 'high' : '';
-                const changeClass = opp.coin.percent_change_24h >= 0 ? 'positive' : 'negative';
-                const changeSign = opp.coin.percent_change_24h >= 0 ? '+' : '';
+                const isProfitable = parseFloat(opp.net) > 0;
+                const profitColor = isProfitable ? 'text-profit' : 'text-slate-400';
+                const profitBg = isProfitable ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-slate-800 border-slate-700';
                 
                 return `
-                    <div class="opportunity">
-                        <div class="opp-header">
-                            <div class="coin-info">
-                                <h3>${opp.coin.name} (${opp.coin.symbol})</h3>
-                                <div class="coin-details">
-                                    Rank: <strong>#${opp.coin.rank}</strong><br>
-                                    24h Change: <span class="price-change ${changeClass}">${changeSign}${opp.coin.percent_change_24h.toFixed(2)}%</span><br>
-                                    Market Cap: $${formatNumber(opp.coin.market_cap)} • Volume: $${formatNumber(opp.coin.volume_24h)}
+                <div class="bg-panel border border-slate-800 hover:border-accent/30 rounded-xl p-0 overflow-hidden transition-all group shadow-lg">
+                    <div class="flex flex-col md:flex-row">
+                        
+                        <div class="p-6 md:w-1/4 border-b md:border-b-0 md:border-r border-slate-800 bg-slate-900/30 flex flex-col justify-center">
+                            <div class="flex items-center gap-3 mb-2">
+                                <img src="${opp.coin.image}" alt="${opp.coin.symbol}" class="w-10 h-10 rounded-full">
+                                <div>
+                                    <h3 class="font-bold text-white text-lg leading-none">${opp.coin.name}</h3>
+                                    <span class="text-xs font-mono text-slate-500">${opp.coin.symbol}</span>
                                 </div>
                             </div>
-                            <div class="profit-display">
-                                <div class="profit-percentage ${profitClass}">+${opp.netSpread}%</div>
-                                <div class="profit-label" style="color: #a0a0a0; font-size: 0.8rem;">Net Profit</div>
+                            <div class="flex justify-between mt-4 text-xs font-mono text-slate-400">
+                                <span>Vol: $${formatNumber(opp.coin.total_volume)}</span>
+                                <span class="${opp.coin.price_change_percentage_24h >= 0 ? 'text-profit' : 'text-loss'}">
+                                    ${opp.coin.price_change_percentage_24h.toFixed(2)}%
+                                </span>
                             </div>
                         </div>
 
-                        <div class="exchanges">
-                            <div class="exchange">
-                                <div class="exchange-name">${opp.buyExchange}</div>
-                                <div class="exchange-price">$${formatPrice(opp.buyPrice)}</div>
-                                <span class="exchange-label buy-label">BUY</span>
+                        <div class="p-6 md:w-2/4 flex items-center justify-between gap-4 relative">
+                            <div class="text-center flex-1">
+                                <div class="text-xs text-slate-500 font-bold mb-1">BUY FROM</div>
+                                <div class="text-white font-bold text-lg">${EXCHANGE_NAMES[opp.buy.exchange]}</div>
+                                <div class="font-mono text-accent text-sm">$${formatPrice(opp.buy.price)}</div>
                             </div>
-                            <div class="arrow">→</div>
-                            <div class="exchange">
-                                <div class="exchange-name">${opp.sellExchange}</div>
-                                <div class="exchange-price">$${formatPrice(opp.sellPrice)}</div>
-                                <span class="exchange-label sell-label">SELL</span>
+
+                            <div class="text-slate-600 text-2xl animate-pulse">
+                                <i class="fa-solid fa-arrow-right-long"></i>
+                            </div>
+
+                            <div class="text-center flex-1">
+                                <div class="text-xs text-slate-500 font-bold mb-1">SELL AT</div>
+                                <div class="text-white font-bold text-lg">${EXCHANGE_NAMES[opp.sell.exchange]}</div>
+                                <div class="font-mono text-accent text-sm">$${formatPrice(opp.sell.price)}</div>
                             </div>
                         </div>
 
-                        <div class="profit-breakdown">
-                            <div class="profit-item">
-                                <div class="profit-item-label">Profit on $1K</div>
-                                <div class="profit-item-value">$${(1000 * parseFloat(opp.netSpread) / 100).toFixed(2)}</div>
-                            </div>
-                            <div class="profit-item">
-                                <div class="profit-item-label">Profit on $5K</div>
-                                <div class="profit-item-value">$${(5000 * parseFloat(opp.netSpread) / 100).toFixed(2)}</div>
-                            </div>
-                            <div class="profit-item">
-                                <div class="profit-item-label">Gross Spread</div>
-                                <div class="profit-item-value">${opp.grossSpread}%</div>
-                            </div>
-                            <div class="profit-item">
-                                <div class="profit-item-label">Total Fees</div>
-                                <div class="profit-item-value" style="color: #ff9800;">${opp.totalFees}%</div>
-                            </div>
-                            <div class="profit-item">
-                                <div class="profit-item-label">Confidence</div>
-                                <div class="profit-item-value">${opp.confidence}%</div>
+                        <div class="p-6 md:w-1/4 bg-${isProfitable ? 'emerald' : 'slate'}-900/10 flex flex-col justify-center items-end border-t md:border-t-0 md:border-l border-slate-800">
+                            <div class="text-xs text-slate-500 font-bold mb-1 uppercase">Net Profit</div>
+                            <div class="text-4xl font-mono font-bold ${profitColor} tracking-tighter">${opp.net}%</div>
+                            <div class="text-xs text-slate-500 mt-2 font-mono">
+                                Gross: ${opp.gross}% | Fees: -${opp.fees}%
                             </div>
                         </div>
 
-                        <div class="last-updated">
-                            🔴 LIVE • Real Exchange Data • ${new Date(opp.lastUpdated).toLocaleTimeString()}
-                        </div>
-                        
-                        <div class="warning-badge">
-                            ⚠️ Verify prices on exchanges before trading. Prices change rapidly.
-                        </div>
                     </div>
-                `;
-            }).join('');
-        }
-
-        function displayError(message) {
-            const container = document.getElementById('opportunitiesContainer');
-            container.innerHTML = `
-                <div class="no-results">
-                    <h3>⚠️ Error</h3>
-                    <p>${message}</p>
-                    <div style="margin-top: 15px;">
-                        <button class="scan-btn" onclick="scanMarkets()">
-                            <span>🔄</span> Try Again
-                        </button>
+                    
+                    <div class="bg-slate-950/50 px-6 py-2 border-t border-slate-800 flex justify-between items-center text-xs font-mono text-slate-500">
+                        <div>
+                            Est. Profit on $1,000: <span class="text-white ml-1">$${(1000 * parseFloat(opp.net) / 100).toFixed(2)}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                             <i class="fa-solid fa-clock"></i> ${new Date(opp.timestamp).toLocaleTimeString()}
+                        </div>
                     </div>
                 </div>
-            `;
+                `;
+            }).join('');
         }
 
         function updateStats() {
             document.getElementById('opportunitiesCount').textContent = opportunities.length;
             document.getElementById('coinsTracked').textContent = Object.keys(livePrices).length;
             document.getElementById('apiCalls').textContent = apiCallCount;
-            document.getElementById('bestSpread').textContent = 
-                opportunities.length > 0 ? opportunities[0].netSpread + '%' : '0%';
-            document.getElementById('lastUpdate').textContent = 
-                lastUpdateTime ? lastUpdateTime.toLocaleTimeString() : '--:--';
+            document.getElementById('bestSpread').textContent = opportunities.length > 0 ? opportunities[0].net + '%' : '0%';
+            document.getElementById('lastUpdate').textContent = lastUpdateTime ? lastUpdateTime.toLocaleTimeString() : '--:--';
         }
 
-        function formatPrice(price) {
-            if (price >= 1000) return price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            if (price >= 100) return price.toFixed(2);
-            if (price >= 1) return price.toFixed(3);
-            if (price >= 0.01) return price.toFixed(4);
-            if (price >= 0.0001) return price.toFixed(6);
-            return price.toFixed(8);
-        }
-
-        function formatNumber(num) {
-            if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
-            if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
-            if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
-            if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
-            return num ? num.toFixed(0) : '0';
-        }
-
-        // Auto-initialization removed - user must click "Scan Live Markets" button
-        
-        console.log('📱 Crypto Arbitrage Scanner loaded - using Backend API (Netlify Functions)');
-        console.log('⚡ Click "Scan Live Markets" to start scanning');
-        console.log('🚀 No CORS issues - all exchange requests go through serverless backend');
+        // --- Init ---
+        console.log('🚀 Arbitrage Terminal Loaded');
     </script>
-
-    <!-- Footer -->
-    <footer style="text-align: center; padding: 40px 20px; margin-top: 50px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
-        <div style="max-width: 1200px; margin: 0 auto;">
-            <!-- SEO Content Section -->
-            <div style="text-align: left; margin-bottom: 40px; padding: 30px; background: rgba(255,255,255,0.03); border-radius: 12px;">
-                <h2 style="color: #00d2ff; font-size: 1.5rem; margin-bottom: 15px;">What is Crypto Arbitrage?</h2>
-                <p style="color: #c0c0c0; line-height: 1.8; margin-bottom: 15px;">
-                    Crypto arbitrage is a trading strategy that exploits price differences of the same cryptocurrency across different exchanges. Our <strong>free crypto arbitrage scanner</strong> monitors real-time prices from 8 major cryptocurrency exchanges including Binance, KuCoin, Gate.io, MEXC, Bybit, OKX, Huobi, and Bitget to help traders identify profitable opportunities instantly.
-                </p>
-                <p style="color: #c0c0c0; line-height: 1.8; margin-bottom: 15px;">
-                    With our arbitrage scanner, you can track up to 250 cryptocurrencies simultaneously and discover price differences that could lead to profitable trades. The tool calculates net profits after accounting for trading fees on each exchange, giving you accurate profit estimations.
-                </p>
-                
-                <h3 style="color: #00d2ff; font-size: 1.2rem; margin: 25px 0 15px 0;">Why Use Our Arbitrage Scanner?</h3>
-                <ul style="color: #c0c0c0; line-height: 2; list-style-position: inside;">
-                    <li>✅ <strong>100% Free</strong> - No registration or subscription required</li>
-                    <li>✅ <strong>Real-Time Data</strong> - Live prices from 8 major cryptocurrency exchanges</li>
-                    <li>✅ <strong>Accurate Calculations</strong> - Includes trading fees and net profit estimates</li>
-                    <li>✅ <strong>Up to 250 Coins</strong> - Scan Bitcoin, Ethereum, and 248 other cryptocurrencies</li>
-                    <li>✅ <strong>Fast Updates</strong> - Serverless backend ensures quick price comparisons</li>
-                    <li>✅ <strong>Mobile Friendly</strong> - Use on any device, anywhere</li>
-                </ul>
-
-                <h3 style="color: #00d2ff; font-size: 1.2rem; margin: 25px 0 15px 0;">Supported Exchanges</h3>
-                <p style="color: #c0c0c0; line-height: 1.8;">
-                    Our crypto arbitrage tool compares prices across: <strong>Binance</strong>, <strong>KuCoin</strong>, <strong>Gate.io</strong>, <strong>MEXC</strong>, <strong>Bybit</strong>, <strong>OKX</strong>, <strong>Huobi</strong>, and <strong>Bitget</strong> - giving you comprehensive market coverage for arbitrage trading opportunities.
-                </p>
-            </div>
-
-            <p style="color: #a0a0a0; font-size: 0.9rem; margin-bottom: 15px;">
-                &copy; 2025 KarziTech. All rights reserved.
-            </p>
-            <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px;">
-                <a href="/privacy/" style="color: #00d2ff; text-decoration: none; font-size: 0.9rem;">Privacy Policy</a>
-                <span style="color: #666;">|</span>
-                <a href="/privacy/" style="color: #00d2ff; text-decoration: none; font-size: 0.9rem;">Terms of Service</a>
-                <span style="color: #666;">|</span>
-                <a href="mailto:carlmorline@gmail.com" style="color: #00d2ff; text-decoration: none; font-size: 0.9rem;">Contact</a>
-            </div>
-            <p style="color: #666; font-size: 0.8rem; margin-top: 15px;">
-                ⚠️ Real exchange data. Always verify prices before trading. Cryptocurrency trading involves risk.
-            </p>
-            <p style="color: #555; font-size: 0.75rem; margin-top: 10px;">
-                Keywords: crypto arbitrage scanner, cryptocurrency arbitrage tool, bitcoin arbitrage, crypto price comparison, arbitrage trading, binance arbitrage, real-time crypto prices, crypto trading opportunities
-            </p>
-        </div>
-    </footer>
 </body>
 </html>
