@@ -84,6 +84,409 @@
     </style>
 </head>
 <body class="bg-dark text-slate-300 font-sans min-h-screen flex flex-col relative overflow-x-hidden selection:bg-accent selection:text-white">
-    ```
 
-Bu kodun altına belirli bir yere (örneğin fırsatların arasına veya footer üstüne) özel bir reklam alanı yerleştirmemi ister misin?
+    <div class="fixed inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none bg-grid z-0"></div>
+
+    <nav class="border-b border-slate-800 bg-dark/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-lg shadow-cyan-500/20">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <h1 class="font-bold text-lg tracking-tight text-white">Arbitrage<span class="text-accent">Scanner</span> <span class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700 ml-2 font-mono">PRO</span></h1>
+            </div>
+            
+            <div id="apiStatus" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-700 transition-colors">
+                <div id="statusDot" class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
+                <span id="statusText" class="text-xs font-mono font-medium text-slate-400">Connecting...</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow container max-w-7xl mx-auto px-4 py-8 relative z-10">
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+            <div class="bg-panel border border-slate-800 p-4 rounded-xl relative overflow-hidden group hover:border-slate-700 transition-all">
+                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Opportunities</div>
+                <div id="opportunitiesCount" class="text-2xl font-mono font-bold text-white group-hover:text-accent transition-colors">0</div>
+                <i class="fa-solid fa-bolt absolute right-3 bottom-3 text-slate-800 text-4xl group-hover:text-slate-700/50 transition-colors"></i>
+            </div>
+            
+            <div class="bg-panel border border-slate-800 p-4 rounded-xl relative overflow-hidden">
+                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Best Spread</div>
+                <div id="bestSpread" class="text-2xl font-mono font-bold text-profit">0%</div>
+                <i class="fa-solid fa-chart-line absolute right-3 bottom-3 text-slate-800 text-4xl"></i>
+            </div>
+
+            <div class="bg-panel border border-slate-800 p-4 rounded-xl relative overflow-hidden">
+                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Coins Scanned</div>
+                <div id="coinsTracked" class="text-2xl font-mono font-bold text-white">0</div>
+                <i class="fa-solid fa-coins absolute right-3 bottom-3 text-slate-800 text-4xl"></i>
+            </div>
+
+            <div class="bg-panel border border-slate-800 p-4 rounded-xl relative overflow-hidden">
+                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">API Requests</div>
+                <div id="apiCalls" class="text-2xl font-mono font-bold text-slate-400">0</div>
+                <i class="fa-solid fa-server absolute right-3 bottom-3 text-slate-800 text-4xl"></i>
+            </div>
+
+            <div class="bg-panel border border-slate-800 p-4 rounded-xl relative overflow-hidden">
+                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Last Update</div>
+                <div id="lastUpdate" class="text-xl font-mono font-bold text-white">--:--</div>
+                <i class="fa-regular fa-clock absolute right-3 bottom-3 text-slate-800 text-4xl"></i>
+            </div>
+        </div>
+
+        <div class="w-full bg-slate-900/50 border-y border-slate-800 h-10 mb-8 flex items-center overflow-hidden relative">
+            <div class="absolute left-0 bg-dark z-10 px-2 h-full flex items-center border-r border-slate-800 text-xs font-bold text-accent">LIVE FEED</div>
+            <div class="ticker-wrap" id="priceTicker">
+                <div class="ticker-content font-mono text-xs text-slate-400 py-2 pl-4" id="tickerContent">
+                    System Initializing... Waiting for data stream...
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-panel border border-slate-800 rounded-2xl p-6 mb-8 shadow-2xl shadow-black/50">
+            <div class="flex flex-col md:flex-row gap-6 items-end">
+                
+                <div class="w-full md:w-auto flex-grow grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="flex flex-col gap-2">
+                        <label for="minSpread" class="text-xs font-bold text-slate-400 uppercase">Min Profit %</label>
+                        <div class="relative">
+                            <input type="number" id="minSpread" value="0.1" min="0.01" max="20" step="0.01" 
+                                class="w-full bg-dark border border-slate-700 rounded-lg py-2.5 px-4 text-white font-mono focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all">
+                            <span class="absolute right-4 top-2.5 text-slate-600 font-mono">%</span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label for="coinLimit" class="text-xs font-bold text-slate-400 uppercase">Market Depth</label>
+                        <select id="coinLimit" 
+                            class="w-full bg-dark border border-slate-700 rounded-lg py-2.5 px-4 text-white font-mono focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all">
+                            <option value="10">Top 10 Coins (Instant)</option>
+                            <option value="25">Top 25 Coins</option>
+                            <option value="50" selected>Top 50 Coins</option>
+                            <option value="100">Top 100 Coins</option>
+                            <option value="250">Top 250 Coins (Slow)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label for="volumeFilter" class="text-xs font-bold text-slate-400 uppercase">Min Volume (24h)</label>
+                        <select id="volumeFilter" 
+                            class="w-full bg-dark border border-slate-700 rounded-lg py-2.5 px-4 text-white font-mono focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all">
+                            <option value="0">All Volumes</option>
+                            <option value="1000000" selected>$1,000,000+</option>
+                            <option value="10000000">$10,000,000+</option>
+                            <option value="100000000">$100,000,000+</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="scanMarkets()" id="scanBtn" 
+                    class="w-full md:w-auto px-8 py-3 bg-accent hover:bg-cyan-400 text-dark font-bold rounded-lg shadow-lg shadow-cyan-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-radar"></i>
+                    SCAN MARKETS
+                </button>
+            </div>
+        </div>
+
+        <div id="opportunitiesContainer" class="grid grid-cols-1 gap-4">
+            <div class="text-center py-20 border border-dashed border-slate-800 rounded-2xl bg-slate-900/30">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-800 flex items-center justify-center text-slate-600">
+                    <i class="fa-solid fa-satellite-dish text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-300">Ready to Scan</h3>
+                <p class="text-slate-500 text-sm max-w-md mx-auto mt-2">
+                    Click the scan button to fetch real-time prices from 8 exchanges and calculate profitable arbitrage paths.
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="border-t border-slate-800 bg-dark mt-12 py-12">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <div class="grid md:grid-cols-2 gap-8 text-left mb-12">
+                <div>
+                    <h3 class="text-white font-bold mb-4">About the Scanner</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed">
+                        This tool connects directly to public APIs of major exchanges (Binance, KuCoin, Gate.io, etc.) via a serverless backend to bypass CORS. It calculates the spread after estimated trading fees (0.1% - 0.2%) to show net profit potential.
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-white font-bold mb-4">Disclaimer</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed">
+                        Crypto trading involves significant risk. Prices on this dashboard may differ slightly from execution prices due to market volatility and order book depth. Always verify manually before executing trades.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex justify-center gap-6 text-sm text-slate-400 mb-6">
+                <a href="#" class="hover:text-accent transition-colors">Privacy Policy</a>
+                <a href="#" class="hover:text-accent transition-colors">Terms of Service</a>
+                <a href="#" class="hover:text-accent transition-colors">Contact</a>
+            </div>
+            
+            <p class="text-xs text-slate-600">© 2025 KarziTech • Built for Traders</p>
+        </div>
+    </footer>
+
+    <script>
+        const API_ENDPOINT = '/.netlify/functions/get-prices';
+        
+        const EXCHANGE_FEES = {
+            binance: 0.1, kucoin: 0.1, gateio: 0.2, mexc: 0.2,
+            bybit: 0.1, okx: 0.1, huobi: 0.2, bitget: 0.1
+        };
+
+        const EXCHANGE_NAMES = {
+            binance: 'Binance', kucoin: 'KuCoin', gateio: 'Gate.io', mexc: 'MEXC',
+            bybit: 'Bybit', okx: 'OKX', huobi: 'Huobi', bitget: 'Bitget'
+        };
+
+        const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
+        
+        let livePrices = {};
+        let opportunities = [];
+        let apiCallCount = 0;
+        let lastUpdateTime = null;
+
+        function updateApiStatus(status, message) {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const apiStatusEl = document.getElementById('apiStatus');
+            
+            statusText.textContent = message;
+            statusDot.className = 'w-2 h-2 rounded-full animate-pulse ';
+            if (status === 'online') {
+                statusDot.classList.add('bg-green-500');
+                apiStatusEl.classList.add('border-green-900/50', 'bg-green-900/10');
+                apiStatusEl.classList.remove('border-red-900/50', 'bg-red-900/10');
+            } else if (status === 'error') {
+                statusDot.classList.add('bg-red-500');
+                apiStatusEl.classList.add('border-red-900/50', 'bg-red-900/10');
+            } else {
+                statusDot.classList.add('bg-yellow-500');
+            }
+        }
+
+        function formatNumber(num) {
+            if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+            return num ? num.toLocaleString() : '0';
+        }
+
+        function formatPrice(price) {
+            return price < 1 ? price.toFixed(6) : price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
+        async function fetchCoinList() {
+            const coinLimit = parseInt(document.getElementById('coinLimit').value);
+            try {
+                const url = `${COINGECKO_BASE_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${coinLimit}&page=1&sparkline=false&price_change_percentage=24h`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Coingecko Error');
+                const data = await response.json();
+                apiCallCount++;
+                
+                livePrices = {};
+                data.forEach((coin, index) => {
+                    livePrices[coin.symbol.toUpperCase()] = {
+                        ...coin,
+                        symbol: coin.symbol.toUpperCase(),
+                        rank: index + 1,
+                        exchangePrices: {}
+                    };
+                });
+                return true;
+            } catch (error) {
+                console.error(error);
+                return false;
+            }
+        }
+
+        async function fetchExchangePrices(symbols) {
+            try {
+                const symbolString = symbols.join(',');
+                const response = await fetch(`${API_ENDPOINT}?symbols=${symbolString}`);
+                const result = await response.json();
+                if (result.success) {
+                    apiCallCount++;
+                    return result.data;
+                }
+                return null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        async function findRealArbitrageOpportunities() {
+            const opps = [];
+            const minSpread = parseFloat(document.getElementById('minSpread').value);
+            const minVolume = parseFloat(document.getElementById('volumeFilter').value);
+            
+            const eligibleCoins = Object.values(livePrices).filter(c => c.total_volume >= minVolume);
+            
+            updateApiStatus('loading', `Analyzing ${eligibleCoins.length} assets...`);
+            
+            const symbols = eligibleCoins.map(c => c.symbol);
+            const allPrices = await fetchExchangePrices(symbols);
+
+            if (!allPrices) return [];
+
+            for (const coin of eligibleCoins) {
+                const prices = allPrices[coin.symbol];
+                if (!prices) continue;
+
+                const validPrices = Object.entries(prices)
+                    .filter(([ex, p]) => p !== null && ex !== 'timestamp')
+                    .map(([exchange, price]) => ({ exchange, price }));
+
+                if (validPrices.length < 2) continue;
+
+                validPrices.sort((a, b) => a.price - b.price);
+                const buy = validPrices[0];
+                const sell = validPrices[validPrices.length - 1];
+
+                const grossSpread = ((sell.price - buy.price) / buy.price) * 100;
+                const fees = EXCHANGE_FEES[buy.exchange] + EXCHANGE_FEES[sell.exchange];
+                const netSpread = grossSpread - fees;
+
+                if (netSpread >= minSpread) {
+                    opps.push({
+                        coin: coin,
+                        buy: buy,
+                        sell: sell,
+                        gross: grossSpread.toFixed(2),
+                        net: netSpread.toFixed(2),
+                        fees: fees.toFixed(2),
+                        timestamp: Date.now()
+                    });
+                }
+            }
+            return opps.sort((a, b) => b.net - a.net);
+        }
+
+        async function scanMarkets() {
+            const btn = document.getElementById('scanBtn');
+            const container = document.getElementById('opportunitiesContainer');
+            
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> SCANNING...`;
+            
+            container.innerHTML = `
+                <div class="text-center py-16 animate-pulse">
+                    <div class="text-accent text-xl mb-2 font-mono">ESTABLISHING DATA STREAMS...</div>
+                    <p class="text-slate-500 text-sm">Querying global order books</p>
+                </div>
+            `;
+
+            try {
+                updateApiStatus('loading', 'Fetching Top Coins...');
+                const listSuccess = await fetchCoinList();
+                
+                if (listSuccess) {
+                    opportunities = await findRealArbitrageOpportunities();
+                    displayOpportunities();
+                    updateApiStatus('online', `${opportunities.length} Paths Found`);
+                    lastUpdateTime = new Date();
+                    updateStats();
+                } else {
+                    throw new Error("Data Source Error");
+                }
+            } catch (e) {
+                console.error(e);
+                updateApiStatus('error', 'Connection Failed');
+                container.innerHTML = `<div class="p-8 bg-red-900/20 border border-red-900/50 rounded-xl text-center text-red-400">Scan Failed. Retrying...</div>`;
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-radar"></i> SCAN MARKETS`;
+        }
+
+        function displayOpportunities() {
+            const container = document.getElementById('opportunitiesContainer');
+            
+            if (opportunities.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 bg-slate-900/50 border border-slate-800 rounded-xl text-center">
+                        <i class="fa-solid fa-check-circle text-slate-600 text-3xl mb-4"></i>
+                        <h3 class="text-white font-bold">Markets are Efficient</h3>
+                        <p class="text-slate-500 text-sm">No arbitrage opportunities found above your minimum spread threshold.</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = opportunities.map(opp => {
+                const isProfitable = parseFloat(opp.net) > 0;
+                const profitColor = isProfitable ? 'text-profit' : 'text-slate-400';
+                
+                return `
+                <div class="bg-panel border border-slate-800 hover:border-accent/30 rounded-xl p-0 overflow-hidden transition-all group shadow-lg">
+                    <div class="flex flex-col md:flex-row">
+                        <div class="p-6 md:w-1/4 border-b md:border-b-0 md:border-r border-slate-800 bg-slate-900/30 flex flex-col justify-center">
+                            <div class="flex items-center gap-3 mb-2">
+                                <img src="${opp.coin.image}" alt="${opp.coin.symbol}" class="w-10 h-10 rounded-full">
+                                <div>
+                                    <h3 class="font-bold text-white text-lg leading-none">${opp.coin.name}</h3>
+                                    <span class="text-xs font-mono text-slate-500">${opp.coin.symbol}</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between mt-4 text-xs font-mono text-slate-400">
+                                <span>Vol: $${formatNumber(opp.coin.total_volume)}</span>
+                                <span class="${opp.coin.price_change_percentage_24h >= 0 ? 'text-profit' : 'text-loss'}">
+                                    ${opp.coin.price_change_percentage_24h.toFixed(2)}%
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="p-6 md:w-2/4 flex items-center justify-between gap-4 relative">
+                            <div class="text-center flex-1">
+                                <div class="text-xs text-slate-500 font-bold mb-1">BUY FROM</div>
+                                <div class="text-white font-bold text-lg">${EXCHANGE_NAMES[opp.buy.exchange]}</div>
+                                <div class="font-mono text-accent text-sm">$${formatPrice(opp.buy.price)}</div>
+                            </div>
+                            <div class="text-slate-600 text-2xl animate-pulse">
+                                <i class="fa-solid fa-arrow-right-long"></i>
+                            </div>
+                            <div class="text-center flex-1">
+                                <div class="text-xs text-slate-500 font-bold mb-1">SELL AT</div>
+                                <div class="text-white font-bold text-lg">${EXCHANGE_NAMES[opp.sell.exchange]}</div>
+                                <div class="font-mono text-accent text-sm">$${formatPrice(opp.sell.price)}</div>
+                            </div>
+                        </div>
+
+                        <div class="p-6 md:w-1/4 bg-${isProfitable ? 'emerald' : 'slate'}-900/10 flex flex-col justify-center items-end border-t md:border-t-0 md:border-l border-slate-800">
+                            <div class="text-xs text-slate-500 font-bold mb-1 uppercase">Net Profit</div>
+                            <div class="text-4xl font-mono font-bold ${profitColor} tracking-tighter">${opp.net}%</div>
+                            <div class="text-xs text-slate-500 mt-2 font-mono">
+                                Gross: ${opp.gross}% | Fees: -${opp.fees}%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-950/50 px-6 py-2 border-t border-slate-800 flex justify-between items-center text-xs font-mono text-slate-500">
+                        <div>
+                            Est. Profit on $1,000: <span class="text-white ml-1">$${(1000 * parseFloat(opp.net) / 100).toFixed(2)}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                             <i class="fa-solid fa-clock"></i> ${new Date(opp.timestamp).toLocaleTimeString()}
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function updateStats() {
+            document.getElementById('opportunitiesCount').textContent = opportunities.length;
+            document.getElementById('coinsTracked').textContent = Object.keys(livePrices).length;
+            document.getElementById('apiCalls').textContent = apiCallCount;
+            document.getElementById('bestSpread').textContent = opportunities.length > 0 ? opportunities[0].net + '%' : '0%';
+            document.getElementById('lastUpdate').textContent = lastUpdateTime ? lastUpdateTime.toLocaleTimeString() : '--:--';
+        }
+
+        console.log('🚀 Arbitrage Terminal Loaded');
+    </script>
+</body>
+</html>
