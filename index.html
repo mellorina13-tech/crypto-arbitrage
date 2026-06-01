@@ -19,7 +19,35 @@
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- WebView / App Detection - Must run early -->
+    <script>
+        // Detect if page is loaded inside an Android WebView (Google Play app)
+        (function() {
+            var urlParams = new URLSearchParams(window.location.search);
+            var ua = navigator.userAgent.toLowerCase();
+            
+            // Check 1: URL parameter (e.g., ?source=app or ?from=app)
+            var isAppByUrl = urlParams.has('source') && urlParams.get('source') === 'app';
+            
+            // Check 2: User-Agent contains "wv" (Android WebView standard indicator)
+            var isWebViewUA = ua.indexOf('wv') > -1;
+            
+            // Check 3: Android but NOT a normal browser Chrome
+            var isAndroidApp = ua.indexOf('android') > -1 && ua.indexOf('chrome') === -1;
+            
+            window.isWebView = isAppByUrl || isWebViewUA || isAndroidApp;
+            
+            // Also expose as data attribute on html element for CSS targeting
+            if (window.isWebView) {
+                document.documentElement.setAttribute('data-app', 'true');
+            } else {
+                document.documentElement.setAttribute('data-app', 'false');
+            }
+        })();
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -45,6 +73,34 @@
     </script>
 
     <style>
+        /* Ad Container - Native Banner Styling */
+        #adContainer {
+            transition: all 0.3s ease;
+        }
+        #adContainer.hidden {
+            display: none !important;
+        }
+        .ad-native-banner {
+            background: rgba(21, 30, 50, 0.6);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            border-radius: 16px;
+            padding: 12px;
+            min-height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ad-native-banner .ad-label {
+            position: absolute;
+            top: 6px;
+            right: 10px;
+            font-size: 9px;
+            color: #64748b;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
         /* Modern Scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #0B1120; }
@@ -137,7 +193,19 @@
             </div>
         </div>
 
+        <!-- Adsterra Native Banner Ad (only shows on website, NOT in Google Play Android app) -->
+        <div id="adContainer" class="hidden">
+            <div class="ad-native-banner relative mb-8">
+                <span class="ad-label">Ad</span>
+                <div id="adContent">
+                    <!-- Adsterra native banner will be dynamically loaded below -->
+                </div>
+            </div>
+        </div>
+
+
         <div class="w-full bg-slate-900/50 border-y border-slate-800 h-10 mb-8 flex items-center overflow-hidden relative">
+
             <div class="absolute left-0 bg-dark z-10 px-2 h-full flex items-center border-r border-slate-800 text-xs font-bold text-accent">LIVE FEED</div>
             <div class="ticker-wrap" id="priceTicker">
                 <div class="ticker-content font-mono text-xs text-slate-400 py-2 pl-4" id="tickerContent">
@@ -486,7 +554,40 @@
             document.getElementById('lastUpdate').textContent = lastUpdateTime ? lastUpdateTime.toLocaleTimeString() : '--:--';
         }
 
+        // =========================================================================
+        // ADSTERRA NATIVE BANNER - Show only on website, hide in Google Play app
+        // =========================================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            var adContainer = document.getElementById('adContainer');
+            
+            // Only show ads if NOT inside Android WebView (Google Play app)
+            if (window.isWebView === false) {
+                // Remove hidden class to show the ad container
+                adContainer.classList.remove('hidden');
+                
+                // Load Adsterra native banner ad
+                var adContent = document.getElementById('adContent');
+                
+                // ===== ADSTERRA NATIVE BANNER (widget layout 4:1) =====
+                var script = document.createElement('script');
+                script.src = 'https://pl29611706.effectivecpmnetwork.com/ba750d832ab46f891cb515f8fd1daa2f/invoke.js';
+                script.async = true;
+                script.setAttribute('data-cfasync', 'false');
+                adContent.appendChild(script);
+                
+                var container = document.createElement('div');
+                container.id = 'container-ba750d832ab46f891cb515f8fd1daa2f';
+                adContent.appendChild(container);
+
+            } else {
+                // App detected - keep ad hidden (already has .hidden class)
+                console.log('[Ad] App mode detected, ads disabled');
+            }
+        });
+
         console.log('🚀 Arbitrage Terminal Loaded');
     </script>
 </body>
 </html>
+
+
