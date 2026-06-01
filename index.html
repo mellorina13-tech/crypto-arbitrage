@@ -19,34 +19,6 @@
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <script>
-        (function() {
-            var urlParams = new URLSearchParams(window.location.search);
-            var ua = navigator.userAgent.toLowerCase();
-            
-            // Kontrol 1: URL Parametresi (?source=app veya ?from=app) varsa uygulamadır
-            var isAppByUrl = urlParams.get('source') === 'app' || urlParams.get('from') === 'app';
-            
-            // Kontrol 2: Standart Android WebView tespiti
-            // WebView'lerde 'wv' harfleri geçer VEYA hem 'android' hem de 'version/' ifadesi aynı anda yer alır.
-            // (Normal mobil Chrome tarayıcılarında 'version/' ifadesi yer almaz!)
-            var isWebViewUA = ua.indexOf('wv') > -1 || (ua.indexOf('android') > -1 && ua.indexOf('version/') > -1);
-            
-            // Kontrol 3: Garanti olması için Android Studio'da User-Agent'a 'karzitech-app' eklerseniz diye yedek kontrol
-            var isCustomAppUA = ua.indexOf('karzitech') > -1;
-
-            // Eğer yukarıdakilerden biri doğruysa kullanıcı uygulamadadır.
-            window.isWebView = isAppByUrl || isWebViewUA || isCustomAppUA;
-            
-            // CSS targeting için html elementine nitelik ekleme
-            if (window.isWebView) {
-                document.documentElement.setAttribute('data-app', 'true');
-            } else {
-                document.documentElement.setAttribute('data-app', 'false');
-            }
-        })();
-    </script>
-
     <script src="https://cdn.tailwindcss.com"></script>
 
     <script>
@@ -74,33 +46,6 @@
     </script>
 
     <style>
-        #adContainer {
-            transition: all 0.3s ease;
-        }
-        #adContainer.hidden {
-            display: none !important;
-        }
-        .ad-native-banner {
-            background: rgba(21, 30, 50, 0.6);
-            border: 1px solid rgba(51, 65, 85, 0.5);
-            border-radius: 16px;
-            padding: 12px;
-            min-height: 90px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .ad-native-banner .ad-label {
-            position: absolute;
-            top: 6px;
-            right: 10px;
-            font-size: 9px;
-            color: #64748b;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #0B1120; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
@@ -186,14 +131,6 @@
                 <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Last Update</div>
                 <div id="lastUpdate" class="text-xl font-mono font-bold text-white">--:--</div>
                 <i class="fa-regular fa-clock absolute right-3 bottom-3 text-slate-800 text-4xl"></i>
-            </div>
-        </div>
-
-        <div id="adContainer" class="hidden">
-            <div class="ad-native-banner relative mb-8">
-                <span class="ad-label">Ad</span>
-                <div id="adContent">
-                    </div>
             </div>
         </div>
 
@@ -543,36 +480,7 @@
             document.getElementById('lastUpdate').textContent = lastUpdateTime ? lastUpdateTime.toLocaleTimeString() : '--:--';
         }
 
-        // =========================================================================
-        // ADSTERRA NATIVE BANNER ENTEGRASYONU (DÜZELTİLDİ)
-        // =========================================================================
-        document.addEventListener('DOMContentLoaded', function() {
-            var adContainer = document.getElementById('adContainer');
-            
-            // Eğer uygulama İÇİNDE DEĞİLSEK (window.isWebView false ise) reklamı yükle ve göster
-            if (window.isWebView === false) {
-                adContainer.classList.remove('hidden');
-                
-                var adContent = document.getElementById('adContent');
-                
-                var script = document.createElement('script');
-                script.src = 'https://pl29611706.effectivecpmnetwork.com/ba750d832ab46f891cb515f8fd1daa2f/invoke.js';
-                script.async = true;
-                script.setAttribute('data-cfasync', 'false');
-                adContent.appendChild(script);
-                
-                var container = document.createElement('div');
-                container.id = 'container-ba750d832ab46f891cb515f8fd1daa2f';
-                adContent.appendChild(container);
-
-                console.log('[Ad] Web mode detected, ads loaded');
-            } else {
-                // Eğer uygulamadaysak (.hidden class'ı kalır ve reklam hiç çağrılmaz)
-                console.log('[Ad] App mode detected, ads disabled');
-            }
-        });
-
-        console.log('🚀 Arbitrage Terminal Loaded');
+        console.log('🚀 Arbitrage Terminal Loaded - Safe Mode');
     </script>
 </body>
 </html>
