@@ -19,25 +19,26 @@
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- WebView / App Detection - Must run early -->
     <script>
-        // Detect if page is loaded inside an Android WebView (Google Play app)
         (function() {
             var urlParams = new URLSearchParams(window.location.search);
             var ua = navigator.userAgent.toLowerCase();
             
-            // Check 1: URL parameter (e.g., ?source=app or ?from=app)
-            var isAppByUrl = urlParams.has('source') && urlParams.get('source') === 'app';
+            // Kontrol 1: URL Parametresi (?source=app veya ?from=app) varsa uygulamadır
+            var isAppByUrl = urlParams.get('source') === 'app' || urlParams.get('from') === 'app';
             
-            // Check 2: User-Agent contains "wv" (Android WebView standard indicator)
-            var isWebViewUA = ua.indexOf('wv') > -1;
+            // Kontrol 2: Standart Android WebView tespiti
+            // WebView'lerde 'wv' harfleri geçer VEYA hem 'android' hem de 'version/' ifadesi aynı anda yer alır.
+            // (Normal mobil Chrome tarayıcılarında 'version/' ifadesi yer almaz!)
+            var isWebViewUA = ua.indexOf('wv') > -1 || (ua.indexOf('android') > -1 && ua.indexOf('version/') > -1);
             
-            // Check 3: Android but NOT a normal browser Chrome
-            var isAndroidApp = ua.indexOf('android') > -1 && ua.indexOf('chrome') === -1;
+            // Kontrol 3: Garanti olması için Android Studio'da User-Agent'a 'karzitech-app' eklerseniz diye yedek kontrol
+            var isCustomAppUA = ua.indexOf('karzitech') > -1;
+
+            // Eğer yukarıdakilerden biri doğruysa kullanıcı uygulamadadır.
+            window.isWebView = isAppByUrl || isWebViewUA || isCustomAppUA;
             
-            window.isWebView = isAppByUrl || isWebViewUA || isAndroidApp;
-            
-            // Also expose as data attribute on html element for CSS targeting
+            // CSS targeting için html elementine nitelik ekleme
             if (window.isWebView) {
                 document.documentElement.setAttribute('data-app', 'true');
             } else {
@@ -58,11 +59,11 @@
                         mono: ['"JetBrains Mono"', 'monospace'],
                     },
                     colors: {
-                        dark: '#0B1120', // Deepest Slate
-                        panel: '#151e32', // Panel Background
-                        accent: '#06b6d4', // Cyan
-                        profit: '#10b981', // Emerald
-                        loss: '#ef4444', // Red
+                        dark: '#0B1120',
+                        panel: '#151e32',
+                        accent: '#06b6d4',
+                        profit: '#10b981',
+                        loss: '#ef4444',
                     },
                     backgroundImage: {
                         'grid-pattern': "linear-gradient(to right, #1f2937 1px, transparent 1px), linear-gradient(to bottom, #1f2937 1px, transparent 1px)",
@@ -73,7 +74,6 @@
     </script>
 
     <style>
-        /* Ad Container - Native Banner Styling */
         #adContainer {
             transition: all 0.3s ease;
         }
@@ -101,20 +101,17 @@
             font-weight: 600;
         }
 
-        /* Modern Scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #0B1120; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
-        /* Background Grid Animation */
         .bg-grid {
             background-size: 40px 40px;
             mask-image: linear-gradient(to bottom, transparent, 10%, white, 90%, transparent);
             -webkit-mask-image: linear-gradient(to bottom, transparent, 5%, black, 95%, transparent);
         }
 
-        /* Ticker Animation */
         .ticker-wrap {
             overflow: hidden;
             white-space: nowrap;
@@ -128,7 +125,6 @@
             100% { transform: translate3d(-100%, 0, 0); }
         }
 
-        /* Input Styles */
         select, input {
             appearance: none;
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
@@ -193,19 +189,15 @@
             </div>
         </div>
 
-        <!-- Adsterra Native Banner Ad (only shows on website, NOT in Google Play Android app) -->
         <div id="adContainer" class="hidden">
             <div class="ad-native-banner relative mb-8">
                 <span class="ad-label">Ad</span>
                 <div id="adContent">
-                    <!-- Adsterra native banner will be dynamically loaded below -->
-                </div>
+                    </div>
             </div>
         </div>
 
-
         <div class="w-full bg-slate-900/50 border-y border-slate-800 h-10 mb-8 flex items-center overflow-hidden relative">
-
             <div class="absolute left-0 bg-dark z-10 px-2 h-full flex items-center border-r border-slate-800 text-xs font-bold text-accent">LIVE FEED</div>
             <div class="ticker-wrap" id="priceTicker">
                 <div class="ticker-content font-mono text-xs text-slate-400 py-2 pl-4" id="tickerContent">
@@ -216,7 +208,6 @@
 
         <div class="bg-panel border border-slate-800 rounded-2xl p-6 mb-8 shadow-2xl shadow-black/50">
             <div class="flex flex-col md:flex-row gap-6 items-end">
-                
                 <div class="w-full md:w-auto flex-grow grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="flex flex-col gap-2">
                         <label for="minSpread" class="text-xs font-bold text-slate-400 uppercase">Min Profit %</label>
@@ -279,13 +270,13 @@
                 <div>
                     <h3 class="text-white font-bold mb-4">About the Scanner</h3>
                     <p class="text-slate-500 text-sm leading-relaxed">
-                        This tool connects directly to public APIs of major exchanges (Binance, KuCoin, Gate.io, etc.) via a serverless backend to bypass CORS. It calculates the spread after estimated trading fees (0.1% - 0.2%) to show net profit potential.
+                        This tool connects directly to public APIs of major exchanges via a serverless backend to bypass CORS. It calculates the spread after estimated trading fees to show net profit potential.
                     </p>
                 </div>
                 <div>
                     <h3 class="text-white font-bold mb-4">Disclaimer</h3>
                     <p class="text-slate-500 text-sm leading-relaxed">
-                        Crypto trading involves significant risk. Prices on this dashboard may differ slightly from execution prices due to market volatility and order book depth. Always verify manually before executing trades.
+                        Crypto trading involves significant risk. Prices on this dashboard may differ slightly from execution prices due to market volatility. Always verify manually before executing trades.
                     </p>
                 </div>
             </div>
@@ -395,7 +386,6 @@
             const minVolume = parseFloat(document.getElementById('volumeFilter').value);
             
             const eligibleCoins = Object.values(livePrices).filter(c => c.total_volume >= minVolume);
-            
             updateApiStatus('loading', `Analyzing ${eligibleCoins.length} assets...`);
             
             const symbols = eligibleCoins.map(c => c.symbol);
@@ -475,13 +465,12 @@
 
         function displayOpportunities() {
             const container = document.getElementById('opportunitiesContainer');
-            
             if (opportunities.length === 0) {
                 container.innerHTML = `
                     <div class="p-8 bg-slate-900/50 border border-slate-800 rounded-xl text-center">
                         <i class="fa-solid fa-check-circle text-slate-600 text-3xl mb-4"></i>
                         <h3 class="text-white font-bold">Markets are Efficient</h3>
-                        <p class="text-slate-500 text-sm">No arbitrage opportunities found above your minimum spread threshold.</p>
+                        <p class="text-slate-500 text-sm">No arbitrage opportunities found.</p>
                     </div>`;
                 return;
             }
@@ -555,20 +544,17 @@
         }
 
         // =========================================================================
-        // ADSTERRA NATIVE BANNER - Show only on website, hide in Google Play app
+        // ADSTERRA NATIVE BANNER ENTEGRASYONU (DÜZELTİLDİ)
         // =========================================================================
         document.addEventListener('DOMContentLoaded', function() {
             var adContainer = document.getElementById('adContainer');
             
-            // Only show ads if NOT inside Android WebView (Google Play app)
+            // Eğer uygulama İÇİNDE DEĞİLSEK (window.isWebView false ise) reklamı yükle ve göster
             if (window.isWebView === false) {
-                // Remove hidden class to show the ad container
                 adContainer.classList.remove('hidden');
                 
-                // Load Adsterra native banner ad
                 var adContent = document.getElementById('adContent');
                 
-                // ===== ADSTERRA NATIVE BANNER (widget layout 4:1) =====
                 var script = document.createElement('script');
                 script.src = 'https://pl29611706.effectivecpmnetwork.com/ba750d832ab46f891cb515f8fd1daa2f/invoke.js';
                 script.async = true;
@@ -579,8 +565,9 @@
                 container.id = 'container-ba750d832ab46f891cb515f8fd1daa2f';
                 adContent.appendChild(container);
 
+                console.log('[Ad] Web mode detected, ads loaded');
             } else {
-                // App detected - keep ad hidden (already has .hidden class)
+                // Eğer uygulamadaysak (.hidden class'ı kalır ve reklam hiç çağrılmaz)
                 console.log('[Ad] App mode detected, ads disabled');
             }
         });
@@ -589,5 +576,3 @@
     </script>
 </body>
 </html>
-
-
