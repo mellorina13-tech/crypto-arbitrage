@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crypto Arbitrage Scanner | Pro Terminal</title>
-    
-    <meta name="description" content="Professional crypto arbitrage scanner. Monitor 8 exchanges in real-time: Binance, KuCoin, Gate.io, MEXC, Bybit, OKX, Huobi and Bitget.">
-    <meta name="keywords" content="crypto arbitrage, arbitrage scanner, trading bot, binance arbitrage, crypto tools">
+
+    <meta name="description" content="Real-time crypto arbitrage terminal. Live executable bid/ask spreads across 8 exchanges (Binance, KuCoin, Gate.io, MEXC, Bybit, OKX, Huobi, Bitget), new-listing radar, funding-rate yield and per-coin market matrix.">
+    <meta name="keywords" content="crypto arbitrage, arbitrage scanner, binance arbitrage, funding rate, new listings, crypto tools">
     <meta name="author" content="KarziTech">
     <link rel="canonical" href="https://crypto-arbitrage.app/">
 
@@ -16,7 +16,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-    
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -78,6 +78,12 @@
             background-size: 1.5em 1.5em;
         }
         input[type="number"] { background-image: none; }
+
+        .tab-btn { border-bottom: 2px solid transparent; }
+        .tab-btn.active { border-color: #06b6d4; color: #fff; background: rgba(6,182,212,0.06); }
+
+        th.sortable { cursor: pointer; user-select: none; }
+        th.sortable:hover { color: #06b6d4; }
     </style>
 </head>
 <body class="bg-dark text-slate-300 font-sans min-h-screen flex flex-col relative overflow-x-hidden selection:bg-accent selection:text-white">
@@ -92,7 +98,7 @@
                 </div>
                 <h1 class="font-bold text-lg tracking-tight text-white">Arbitrage<span class="text-accent">Scanner</span> <span class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700 ml-2 font-mono">PRO</span></h1>
             </div>
-            
+
             <div id="apiStatus" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-700 transition-colors">
                 <div id="statusDot" class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
                 <span id="statusText" class="text-xs font-mono font-medium text-slate-400">Connecting...</span>
@@ -102,28 +108,28 @@
 
     <main class="flex-grow container max-w-7xl mx-auto px-4 py-8 relative z-10">
 
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
             <div class="bg-panel border border-slate-800 p-4 rounded-xl relative overflow-hidden group hover:border-slate-700 transition-all">
                 <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Opportunities</div>
-                <div id="opportunitiesCount" class="text-2xl font-mono font-bold text-white group-hover:text-accent transition-colors">0</div>
+                <div id="opportunitiesCount" class="text-2xl font-mono font-bold text-white group-hover:text-accent transition-colors">--</div>
                 <i class="fa-solid fa-bolt absolute right-3 bottom-3 text-slate-800 text-4xl group-hover:text-slate-700/50 transition-colors"></i>
             </div>
-            
+
             <div class="bg-panel border border-slate-800 p-4 rounded-xl relative overflow-hidden">
-                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Best Spread</div>
-                <div id="bestSpread" class="text-2xl font-mono font-bold text-profit">0%</div>
+                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Best Net Spread</div>
+                <div id="bestSpread" class="text-2xl font-mono font-bold text-profit">--</div>
                 <i class="fa-solid fa-chart-line absolute right-3 bottom-3 text-slate-800 text-4xl"></i>
             </div>
 
             <div class="bg-panel border border-slate-800 p-4 rounded-xl relative overflow-hidden">
-                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Coins Scanned</div>
-                <div id="coinsTracked" class="text-2xl font-mono font-bold text-white">0</div>
+                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Pairs Monitored</div>
+                <div id="pairsMonitored" class="text-2xl font-mono font-bold text-white">--</div>
                 <i class="fa-solid fa-coins absolute right-3 bottom-3 text-slate-800 text-4xl"></i>
             </div>
 
             <div class="bg-panel border border-slate-800 p-4 rounded-xl relative overflow-hidden">
-                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">API Requests</div>
-                <div id="apiCalls" class="text-2xl font-mono font-bold text-slate-400">0</div>
+                <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Exchanges Online</div>
+                <div id="exchangesOnline" class="text-2xl font-mono font-bold text-white">--</div>
                 <i class="fa-solid fa-server absolute right-3 bottom-3 text-slate-800 text-4xl"></i>
             </div>
 
@@ -134,70 +140,86 @@
             </div>
         </div>
 
-        <div class="w-full bg-slate-900/50 border-y border-slate-800 h-10 mb-8 flex items-center overflow-hidden relative">
-            <div class="absolute left-0 bg-dark z-10 px-2 h-full flex items-center border-r border-slate-800 text-xs font-bold text-accent">LIVE FEED</div>
+        <div class="w-full bg-slate-900/50 border-y border-slate-800 h-10 mb-6 flex items-center overflow-hidden relative">
+            <div class="absolute left-0 bg-dark z-10 px-2 h-full flex items-center border-r border-slate-800 text-xs font-bold text-accent">
+                <span id="liveLabel">LIVE</span>
+            </div>
             <div class="ticker-wrap" id="priceTicker">
                 <div class="ticker-content font-mono text-xs text-slate-400 py-2 pl-4" id="tickerContent">
-                    System Initializing... Waiting for data stream...
+                    Connecting to 8 exchange order books...
                 </div>
             </div>
         </div>
 
-        <div class="bg-panel border border-slate-800 rounded-2xl p-6 mb-8 shadow-2xl shadow-black/50">
-            <div class="flex flex-col md:flex-row gap-6 items-end">
-                <div class="w-full md:w-auto flex-grow grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-panel border border-slate-800 rounded-2xl p-4 md:p-6 mb-6 shadow-2xl shadow-black/50">
+            <div class="flex flex-col md:flex-row gap-4 md:items-end">
+                <div class="w-full md:w-auto flex-grow grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="flex flex-col gap-2">
                         <label for="minSpread" class="text-xs font-bold text-slate-400 uppercase">Min Profit %</label>
                         <div class="relative">
-                            <input type="number" id="minSpread" value="0.1" min="0.01" max="20" step="0.01" 
+                            <input type="number" id="minSpread" value="0.5" min="0" max="20" step="0.05"
                                 class="w-full bg-dark border border-slate-700 rounded-lg py-2.5 px-4 text-white font-mono focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all">
                             <span class="absolute right-4 top-2.5 text-slate-600 font-mono">%</span>
                         </div>
                     </div>
 
                     <div class="flex flex-col gap-2">
-                        <label for="coinLimit" class="text-xs font-bold text-slate-400 uppercase">Market Depth</label>
-                        <select id="coinLimit" 
-                            class="w-full bg-dark border border-slate-700 rounded-lg py-2.5 px-4 text-white font-mono focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all">
-                            <option value="10">Top 10 Coins (Instant)</option>
-                            <option value="25">Top 25 Coins</option>
-                            <option value="50" selected>Top 50 Coins</option>
-                            <option value="100">Top 100 Coins</option>
-                            <option value="250">Top 250 Coins (Slow)</option>
-                        </select>
+                        <label for="capital" class="text-xs font-bold text-slate-400 uppercase">Capital (USD)</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-slate-600 font-mono">$</span>
+                            <input type="number" id="capital" value="1000" min="100" step="100"
+                                class="w-full bg-dark border border-slate-700 rounded-lg py-2.5 pl-7 pr-4 text-white font-mono focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all">
+                        </div>
                     </div>
 
                     <div class="flex flex-col gap-2">
                         <label for="volumeFilter" class="text-xs font-bold text-slate-400 uppercase">Min Volume (24h)</label>
-                        <select id="volumeFilter" 
+                        <select id="volumeFilter"
                             class="w-full bg-dark border border-slate-700 rounded-lg py-2.5 px-4 text-white font-mono focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all">
                             <option value="0">All Volumes</option>
-                            <option value="1000000" selected>$1,000,000+</option>
-                            <option value="10000000">$10,000,000+</option>
-                            <option value="100000000">$100,000,000+</option>
+                            <option value="50000">$50k+</option>
+                            <option value="250000" selected>$250k+</option>
+                            <option value="1000000">$1M+</option>
+                            <option value="10000000">$10M+</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label for="refreshRate" class="text-xs font-bold text-slate-400 uppercase">Auto Refresh</label>
+                        <select id="refreshRate"
+                            class="w-full bg-dark border border-slate-700 rounded-lg py-2.5 px-4 text-white font-mono focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all">
+                            <option value="30">Every 30s</option>
+                            <option value="60" selected>Every 60s</option>
+                            <option value="off">Off (Manual)</option>
                         </select>
                     </div>
                 </div>
 
-                <button onclick="scanMarkets()" id="scanBtn" 
+                <button id="scanBtn"
                     class="w-full md:w-auto px-8 py-3 bg-accent hover:bg-cyan-400 text-dark font-bold rounded-lg shadow-lg shadow-cyan-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-radar"></i>
-                    SCAN MARKETS
+                    <i class="fa-solid fa-satellite-dish"></i>
+                    REFRESH
                 </button>
             </div>
         </div>
 
-        <div id="opportunitiesContainer" class="grid grid-cols-1 gap-4">
-            <div class="text-center py-20 border border-dashed border-slate-800 rounded-2xl bg-slate-900/30">
-                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-800 flex items-center justify-center text-slate-600">
-                    <i class="fa-solid fa-satellite-dish text-2xl"></i>
-                </div>
-                <h3 class="text-lg font-bold text-slate-300">Ready to Scan</h3>
-                <p class="text-slate-500 text-sm max-w-md mx-auto mt-2">
-                    Click the scan button to fetch real-time prices from 8 exchanges and calculate profitable arbitrage paths.
-                </p>
-            </div>
+        <div class="flex gap-1 md:gap-2 border-b border-slate-800 mb-6 overflow-x-auto">
+            <button class="tab-btn active px-4 py-3 text-sm font-bold text-slate-400 whitespace-nowrap transition-colors" data-tab="scanner">
+                <i class="fa-solid fa-right-left mr-1.5"></i>Spot Scanner
+            </button>
+            <button class="tab-btn px-4 py-3 text-sm font-bold text-slate-400 whitespace-nowrap transition-colors" data-tab="listings">
+                <i class="fa-solid fa-rocket mr-1.5"></i>Listing Radar
+                <span id="listingsBadge" class="hidden md:inline-flex ml-1.5 px-1.5 py-0.5 text-[10px] font-mono bg-purple-500/20 text-purple-400 rounded border border-purple-500/30">0</span>
+            </button>
+            <button class="tab-btn px-4 py-3 text-sm font-bold text-slate-400 whitespace-nowrap transition-colors" data-tab="funding">
+                <i class="fa-solid fa-percent mr-1.5"></i>Funding Rates
+            </button>
+            <button class="tab-btn px-4 py-3 text-sm font-bold text-slate-400 whitespace-nowrap transition-colors" data-tab="matrix">
+                <i class="fa-solid fa-table-cells mr-1.5"></i>Coin Matrix
+            </button>
         </div>
+
+        <div id="contentArea"></div>
 
     </main>
 
@@ -207,58 +229,88 @@
                 <div>
                     <h3 class="text-white font-bold mb-4">About the Scanner</h3>
                     <p class="text-slate-500 text-sm leading-relaxed">
-                        This tool connects directly to public APIs of major exchanges via a serverless backend to bypass CORS. It calculates the spread after estimated trading fees to show net profit potential.
+                        The engine pulls the full USDT order-book ticker set from 8 exchanges (one bulk request each) and computes arbitrage from
+                        <span class="text-slate-300">executable prices only</span>: buy at the lowest ask, sell at the highest bid. Corrupted
+                        quotes deviating more than 35% from the market median are rejected. Net profit accounts for both taker trading fees and
+                        the recommended blockchain transfer fee for your capital size.
                     </p>
                 </div>
                 <div>
                     <h3 class="text-white font-bold mb-4">Disclaimer</h3>
                     <p class="text-slate-500 text-sm leading-relaxed">
-                        Crypto trading involves significant risk. Prices on this dashboard may differ slightly from execution prices due to market volatility. Always verify manually before executing trades.
+                        Crypto trading involves significant risk. Listing-radar premium estimates are heuristic and badge-marked accordingly —
+                        they are not guaranteed moves. Spreads may change or vanish before execution. Always verify prices, deposit/withdrawal
+                        status and network compatibility manually before trading.
                     </p>
                 </div>
             </div>
-            
+
             <div class="flex justify-center gap-6 text-sm text-slate-400 mb-6">
-                <a href="#" class="hover:text-accent transition-colors">Privacy Policy</a>
+                <a href="/privacy/" class="hover:text-accent transition-colors">Privacy Policy</a>
                 <a href="#" class="hover:text-accent transition-colors">Terms of Service</a>
                 <a href="#" class="hover:text-accent transition-colors">Contact</a>
             </div>
-            
+
             <p class="text-xs text-slate-600">© 2025 KarziTech • Built for Traders</p>
         </div>
     </footer>
 
     <script>
-        const API_ENDPOINT = '/.netlify/functions/get-prices';
-        
-        const EXCHANGE_FEES = {
-            binance: 0.1, kucoin: 0.1, gateio: 0.2, mexc: 0.2,
-            bybit: 0.1, okx: 0.1, huobi: 0.2, bitget: 0.1
+        'use strict';
+
+        // ── Config ───────────────────────────────────────────────────────────
+        const API_ENDPOINT = new URLSearchParams(location.search).get('api') || '/.netlify/functions/arbitrage';
+        const IDLE_STOP_MS = 10 * 60 * 1000; // stop auto-refresh after 10 min of no interaction
+
+        // ── State ────────────────────────────────────────────────────────────
+        const state = {
+            data: null,
+            activeTab: 'scanner',
+            loading: false,
+            lastError: null,
+            // scanner table sort
+            sortKey: 'netSpreadPct',
+            sortDir: -1,
+            // coin matrix
+            matrixCoin: null,
+            matrixLoading: false,
+            matrixError: null,
+            // listing countdown: elementId -> expiry epoch ms
+            countdowns: new Map(),
         };
 
-        const EXCHANGE_NAMES = {
-            binance: 'Binance', kucoin: 'KuCoin', gateio: 'Gate.io', mexc: 'MEXC',
-            bybit: 'Bybit', okx: 'OKX', huobi: 'Huobi', bitget: 'Bitget'
-        };
+        let pollTimer = null;
+        let nextFetchAt = null;
+        let lastInteraction = Date.now();
 
-        const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
-        
-        let livePrices = {};
-        let opportunities = [];
-        let apiCallCount = 0;
-        let lastUpdateTime = null;
+        // ── Helpers ──────────────────────────────────────────────────────────
+        const $ = (id) => document.getElementById(id);
+        const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+        function formatNumber(num) {
+            if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+            if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+            return num ? num.toLocaleString() : '0';
+        }
+
+        function formatPrice(price) {
+            if (!price && price !== 0) return '--';
+            if (price >= 1000) return price.toLocaleString('en-US', { maximumFractionDigits: 2 });
+            if (price >= 1) return price.toFixed(4);
+            return price.toFixed(6);
+        }
 
         function updateApiStatus(status, message) {
-            const statusDot = document.getElementById('statusDot');
-            const statusText = document.getElementById('statusText');
-            const apiStatusEl = document.getElementById('apiStatus');
-            
+            const statusDot = $('statusDot');
+            const statusText = $('statusText');
+            const apiStatusEl = $('apiStatus');
             statusText.textContent = message;
             statusDot.className = 'w-2 h-2 rounded-full animate-pulse ';
+            apiStatusEl.classList.remove('border-green-900/50', 'bg-green-900/10', 'border-red-900/50', 'bg-red-900/10');
             if (status === 'online') {
                 statusDot.classList.add('bg-green-500');
                 apiStatusEl.classList.add('border-green-900/50', 'bg-green-900/10');
-                apiStatusEl.classList.remove('border-red-900/50', 'bg-red-900/10');
             } else if (status === 'error') {
                 statusDot.classList.add('bg-red-500');
                 apiStatusEl.classList.add('border-red-900/50', 'bg-red-900/10');
@@ -267,220 +319,536 @@
             }
         }
 
-        function formatNumber(num) {
-            if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
-            if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
-            return num ? num.toLocaleString() : '0';
+        function badge(text, color) {
+            const colors = {
+                green: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+                amber: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+                red: 'bg-red-500/10 text-red-400 border-red-500/30',
+                cyan: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30',
+                purple: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
+                slate: 'bg-slate-500/10 text-slate-400 border-slate-500/30',
+            };
+            return `<span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded border ${colors[color] || colors.slate}">${esc(text)}</span>`;
         }
 
-        function formatPrice(price) {
-            return price < 1 ? price.toFixed(6) : price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        function liquidityBadge(score) {
+            if (score === 'HIGH') return badge('HIGH LIQ', 'green');
+            if (score === 'MEDIUM') return badge('MED LIQ', 'amber');
+            return badge('LOW LIQ', 'red');
         }
 
-        async function fetchCoinList() {
-            const coinLimit = parseInt(document.getElementById('coinLimit').value);
+        function riskBadge(level) {
+            if (level === 'LOW') return badge('LOW RISK', 'green');
+            if (level === 'MEDIUM') return badge('MED RISK', 'amber');
+            return badge('HIGH RISK', 'red');
+        }
+
+        // ── Data fetching ────────────────────────────────────────────────────
+        function getParams() {
+            return {
+                minSpread: parseFloat($('minSpread').value) || 0,
+                capital: parseFloat($('capital').value) || 1000,
+                minVolume: parseFloat($('volumeFilter').value) || 0,
+            };
+        }
+
+        async function fetchScan() {
+            if (state.loading) return;
+            state.loading = true;
+            $('scanBtn').disabled = true;
+            updateApiStatus('loading', state.data ? 'Updating...' : 'Scanning 8 exchanges...');
+
+            const p = getParams();
             try {
-                const url = `${COINGECKO_BASE_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${coinLimit}&page=1&sparkline=false&price_change_percentage=24h`;
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('Coingecko Error');
-                const data = await response.json();
-                apiCallCount++;
-                
-                livePrices = {};
-                data.forEach((coin, index) => {
-                    livePrices[coin.symbol.toUpperCase()] = {
-                        ...coin,
-                        symbol: coin.symbol.toUpperCase(),
-                        rank: index + 1,
-                        exchangePrices: {}
-                    };
-                });
-                return true;
-            } catch (error) {
-                console.error(error);
-                return false;
-            }
-        }
+                const res = await fetch(`${API_ENDPOINT}?minSpread=${p.minSpread}&capital=${p.capital}&minVolume=${p.minVolume}`);
+                const body = await res.json();
+                if (!res.ok || !body.success) throw new Error(body.error || `HTTP ${res.status}`);
 
-        async function fetchExchangePrices(symbols) {
-            try {
-                const symbolString = symbols.join(',');
-                const response = await fetch(`${API_ENDPOINT}?symbols=${symbolString}`);
-                const result = await response.json();
-                if (result.success) {
-                    apiCallCount++;
-                    return result.data;
-                }
-                return null;
-            } catch (error) {
-                return null;
-            }
-        }
-
-        async function findRealArbitrageOpportunities() {
-            const opps = [];
-            const minSpread = parseFloat(document.getElementById('minSpread').value);
-            const minVolume = parseFloat(document.getElementById('volumeFilter').value);
-            
-            const eligibleCoins = Object.values(livePrices).filter(c => c.total_volume >= minVolume);
-            updateApiStatus('loading', `Analyzing ${eligibleCoins.length} assets...`);
-            
-            const symbols = eligibleCoins.map(c => c.symbol);
-            const allPrices = await fetchExchangePrices(symbols);
-
-            if (!allPrices) return [];
-
-            for (const coin of eligibleCoins) {
-                const prices = allPrices[coin.symbol];
-                if (!prices) continue;
-
-                const validPrices = Object.entries(prices)
-                    .filter(([ex, p]) => p !== null && ex !== 'timestamp')
-                    .map(([exchange, price]) => ({ exchange, price }));
-
-                if (validPrices.length < 2) continue;
-
-                validPrices.sort((a, b) => a.price - b.price);
-                const buy = validPrices[0];
-                const sell = validPrices[validPrices.length - 1];
-
-                const grossSpread = ((sell.price - buy.price) / buy.price) * 100;
-                const fees = EXCHANGE_FEES[buy.exchange] + EXCHANGE_FEES[sell.exchange];
-                const netSpread = grossSpread - fees;
-
-                if (netSpread >= minSpread) {
-                    opps.push({
-                        coin: coin,
-                        buy: buy,
-                        sell: sell,
-                        gross: grossSpread.toFixed(2),
-                        net: netSpread.toFixed(2),
-                        fees: fees.toFixed(2),
-                        timestamp: Date.now()
-                    });
-                }
-            }
-            return opps.sort((a, b) => b.net - a.net);
-        }
-
-        async function scanMarkets() {
-            const btn = document.getElementById('scanBtn');
-            const container = document.getElementById('opportunitiesContainer');
-            
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> SCANNING...`;
-            
-            container.innerHTML = `
-                <div class="text-center py-16 animate-pulse">
-                    <div class="text-accent text-xl mb-2 font-mono">ESTABLISHING DATA STREAMS...</div>
-                    <p class="text-slate-500 text-sm">Querying global order books</p>
-                </div>
-            `;
-
-            try {
-                updateApiStatus('loading', 'Fetching Top Coins...');
-                const listSuccess = await fetchCoinList();
-                
-                if (listSuccess) {
-                    opportunities = await findRealArbitrageOpportunities();
-                    displayOpportunities();
-                    updateApiStatus('online', `${opportunities.length} Paths Found`);
-                    lastUpdateTime = new Date();
-                    updateStats();
-                } else {
-                    throw new Error("Data Source Error");
-                }
+                state.data = body;
+                state.lastError = null;
+                const online = body.exchangesOnline.length;
+                const opps = body.crossExchangeOpportunities.length;
+                updateApiStatus('online', `${online}/8 Exchanges • ${opps} Opportunities`);
+                updateStats();
+                renderTicker();
+                renderActiveTab();
             } catch (e) {
                 console.error(e);
+                state.lastError = e.message;
                 updateApiStatus('error', 'Connection Failed');
-                container.innerHTML = `<div class="p-8 bg-red-900/20 border border-red-900/50 rounded-xl text-center text-red-400">Scan Failed. Retrying...</div>`;
+                renderActiveTab();
             }
 
-            btn.disabled = false;
-            btn.innerHTML = `<i class="fa-solid fa-radar"></i> SCAN MARKETS`;
+            state.loading = false;
+            $('scanBtn').disabled = false;
+            const mode = $('refreshRate').value;
+            nextFetchAt = mode === 'off' ? null : Date.now() + parseInt(mode) * 1000;
         }
 
-        function displayOpportunities() {
-            const container = document.getElementById('opportunitiesContainer');
-            if (opportunities.length === 0) {
-                container.innerHTML = `
-                    <div class="p-8 bg-slate-900/50 border border-slate-800 rounded-xl text-center">
-                        <i class="fa-solid fa-check-circle text-slate-600 text-3xl mb-4"></i>
-                        <h3 class="text-white font-bold">Markets are Efficient</h3>
-                        <p class="text-slate-500 text-sm">No arbitrage opportunities found.</p>
-                    </div>`;
+        async function fetchCoinMatrix(symbol) {
+            state.matrixLoading = true;
+            state.matrixError = null;
+            renderMatrix();
+            try {
+                const p = getParams();
+                const res = await fetch(`${API_ENDPOINT}?coin=${encodeURIComponent(symbol)}&capital=${p.capital}`);
+                const body = await res.json();
+                if (!res.ok || !body.success) throw new Error(body.error || `HTTP ${res.status}`);
+                state.matrixCoin = body;
+            } catch (e) {
+                console.error(e);
+                state.matrixError = e.message;
+                state.matrixCoin = null;
+            }
+            state.matrixLoading = false;
+            renderMatrix();
+        }
+
+        // ── Stats & ticker ───────────────────────────────────────────────────
+        function updateStats() {
+            const d = state.data;
+            if (!d) return;
+            const opps = d.crossExchangeOpportunities;
+            $('opportunitiesCount').textContent = opps.length;
+            $('bestSpread').textContent = opps.length > 0 ? '+' + opps[0].netSpreadPct.toFixed(2) + '%' : '0%';
+            $('pairsMonitored').textContent = formatNumber(d.totalPairsMonitored);
+            $('exchangesOnline').textContent = `${d.exchangesOnline.length}/${d.exchangesMonitored.length}`;
+            $('exchangesOnline').title = 'Online: ' + d.exchangesOnline.join(', ');
+            $('lastUpdate').textContent = new Date(d.timestamp).toLocaleTimeString();
+            const listings = d.listingOpportunities.length;
+            $('listingsBadge').textContent = listings;
+            $('listingsBadge').classList.toggle('hidden', listings === 0);
+        }
+
+        function renderTicker() {
+            const opps = state.data?.crossExchangeOpportunities?.slice(0, 12) || [];
+            if (opps.length === 0) {
+                $('tickerContent').textContent = 'No opportunities above current threshold — markets are efficient right now.';
+                return;
+            }
+            $('tickerContent').innerHTML = opps.map((o) =>
+                `<span class="mr-8"><span class="text-white">${esc(o.symbol)}</span> <span class="text-profit">+${o.netSpreadPct.toFixed(2)}%</span> <span class="text-slate-500">${esc(o.buyExchange)}→${esc(o.sellExchange)}</span></span>`
+            ).join('');
+        }
+
+        // ── Tabs ─────────────────────────────────────────────────────────────
+        function switchTab(tab) {
+            state.activeTab = tab;
+            document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
+            renderActiveTab();
+        }
+
+        function renderActiveTab() {
+            if (state.activeTab === 'scanner') renderScanner();
+            else if (state.activeTab === 'listings') renderListings();
+            else if (state.activeTab === 'funding') renderFunding();
+            else renderMatrix();
+        }
+
+        function errorOrEmpty(html) {
+            if (state.lastError) {
+                return `<div class="p-8 bg-red-900/20 border border-red-900/50 rounded-xl text-center text-red-400">
+                    <i class="fa-solid fa-triangle-exclamation text-2xl mb-3"></i>
+                    <div class="font-bold mb-1">Scan Failed</div>
+                    <div class="text-sm text-red-400/70">${esc(state.lastError)} — retrying on next refresh.</div>
+                </div>`;
+            }
+            return html;
+        }
+
+        // ── Tab 1: Spot Scanner ──────────────────────────────────────────────
+        const SCANNER_COLS = [
+            { key: 'symbol', label: 'ASSET', num: false },
+            { key: 'buyAsk', label: 'BUY FROM (ASK)', num: true },
+            { key: 'sellBid', label: 'SELL AT (BID)', num: true },
+            { key: 'grossSpreadPct', label: 'GROSS %', num: true },
+            { key: 'tradingFeePct', label: 'FEES %', num: true },
+            { key: 'netSpreadPct', label: 'NET %', num: true },
+            { key: 'estimatedProfitUSD', label: 'EST. PROFIT', num: true },
+            { key: 'liquidityScore', label: 'LIQUIDITY', num: false },
+            { key: 'riskLevel', label: 'RISK', num: false },
+        ];
+
+        function sortedOpportunities() {
+            const opps = [...(state.data?.crossExchangeOpportunities || [])];
+            const k = state.sortKey, dir = state.sortDir;
+            opps.sort((a, b) => {
+                const va = a[k], vb = b[k];
+                if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
+                return String(va).localeCompare(String(vb)) * dir;
+            });
+            return opps;
+        }
+
+        function renderScanner() {
+            const area = $('contentArea');
+            const opps = sortedOpportunities();
+            const p = getParams();
+
+            if (!state.data && !state.lastError) {
+                area.innerHTML = `<div class="text-center py-20 border border-dashed border-slate-800 rounded-2xl bg-slate-900/30">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-800 flex items-center justify-center text-slate-600">
+                        <i class="fa-solid fa-satellite-dish text-2xl animate-pulse"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-300">Scanning global order books...</h3>
+                    <p class="text-slate-500 text-sm max-w-md mx-auto mt-2">Fetching live USDT tickers from 8 exchanges and computing executable spreads.</p>
+                </div>`;
                 return;
             }
 
-            container.innerHTML = opportunities.map(opp => {
-                const isProfitable = parseFloat(opp.net) > 0;
-                const profitColor = isProfitable ? 'text-profit' : 'text-slate-400';
-                
+            const head = SCANNER_COLS.map((c) => {
+                const arrow = state.sortKey === c.key ? (state.sortDir === -1 ? ' ▼' : ' ▲') : '';
+                return `<th class="sortable px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider" data-sort="${c.key}">${c.label}${arrow}</th>`;
+            }).join('');
+
+            const rows = opps.map((o) => {
+                const riskBorder = o.riskLevel === 'HIGH' ? 'border-l-red-500' : o.riskLevel === 'MEDIUM' ? 'border-l-amber-500' : 'border-l-emerald-500';
                 return `
-                <div class="bg-panel border border-slate-800 hover:border-accent/30 rounded-xl p-0 overflow-hidden transition-all group shadow-lg">
-                    <div class="flex flex-col md:flex-row">
-                        <div class="p-6 md:w-1/4 border-b md:border-b-0 md:border-r border-slate-800 bg-slate-900/30 flex flex-col justify-center">
-                            <div class="flex items-center gap-3 mb-2">
-                                <img src="${opp.coin.image}" alt="${opp.coin.symbol}" class="w-10 h-10 rounded-full">
-                                <div>
-                                    <h3 class="font-bold text-white text-lg leading-none">${opp.coin.name}</h3>
-                                    <span class="text-xs font-mono text-slate-500">${opp.coin.symbol}</span>
-                                </div>
-                            </div>
-                            <div class="flex justify-between mt-4 text-xs font-mono text-slate-400">
-                                <span>Vol: $${formatNumber(opp.coin.total_volume)}</span>
-                                <span class="${opp.coin.price_change_percentage_24h >= 0 ? 'text-profit' : 'text-loss'}">
-                                    ${opp.coin.price_change_percentage_24h.toFixed(2)}%
-                                </span>
-                            </div>
-                        </div>
+                <tr class="border-t border-slate-800 border-l-2 ${riskBorder} hover:bg-slate-800/30 transition-colors">
+                    <td class="px-4 py-3">
+                        <div class="font-bold text-white font-mono">${esc(o.baseAsset)}<span class="text-slate-500 text-xs">/USDT</span></div>
+                        <div class="text-[10px] text-slate-500 font-mono">Vol ${'$' + formatNumber(o.volume24hUSD)}</div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="text-white text-sm font-bold">${esc(o.buyExchange)}</div>
+                        <div class="font-mono text-accent text-xs">$${formatPrice(o.buyAsk)}</div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="text-white text-sm font-bold">${esc(o.sellExchange)}</div>
+                        <div class="font-mono text-accent text-xs">$${formatPrice(o.sellBid)}</div>
+                    </td>
+                    <td class="px-4 py-3 font-mono text-sm text-slate-300">${o.grossSpreadPct.toFixed(2)}%</td>
+                    <td class="px-4 py-3 font-mono text-sm text-slate-500">-${o.tradingFeePct.toFixed(2)}%<div class="text-[10px] text-slate-600">+$${o.transferFeeUSD.toFixed(2)} xfer</div></td>
+                    <td class="px-4 py-3 font-mono text-base font-bold text-profit">+${o.netSpreadPct.toFixed(2)}%</td>
+                    <td class="px-4 py-3 font-mono text-sm text-white">$${o.estimatedProfitUSD.toFixed(2)}</td>
+                    <td class="px-4 py-3">${liquidityBadge(o.liquidityScore)}<div class="text-[10px] text-slate-600 font-mono mt-1">${esc(o.recommendedNetwork.split(' (')[0])} • ${esc(o.transferTimeEst)}</div></td>
+                    <td class="px-4 py-3">${riskBadge(o.riskLevel)}</td>
+                </tr>`;
+            }).join('');
 
-                        <div class="p-6 md:w-2/4 flex items-center justify-between gap-4 relative">
-                            <div class="text-center flex-1">
-                                <div class="text-xs text-slate-500 font-bold mb-1">BUY FROM</div>
-                                <div class="text-white font-bold text-lg">${EXCHANGE_NAMES[opp.buy.exchange]}</div>
-                                <div class="font-mono text-accent text-sm">$${formatPrice(opp.buy.price)}</div>
-                            </div>
-                            <div class="text-slate-600 text-2xl animate-pulse">
-                                <i class="fa-solid fa-arrow-right-long"></i>
-                            </div>
-                            <div class="text-center flex-1">
-                                <div class="text-xs text-slate-500 font-bold mb-1">SELL AT</div>
-                                <div class="text-white font-bold text-lg">${EXCHANGE_NAMES[opp.sell.exchange]}</div>
-                                <div class="font-mono text-accent text-sm">$${formatPrice(opp.sell.price)}</div>
-                            </div>
-                        </div>
+            const table = opps.length === 0
+                ? `<div class="p-8 bg-slate-900/50 border border-slate-800 rounded-xl text-center">
+                        <i class="fa-solid fa-check-circle text-slate-600 text-3xl mb-4"></i>
+                        <h3 class="text-white font-bold">Markets are Efficient</h3>
+                        <p class="text-slate-500 text-sm">No executable arbitrage above ${p.minSpread}% net for $${p.capital.toLocaleString()} capital at the current filters.</p>
+                    </div>`
+                : `<div class="bg-panel border border-slate-800 rounded-2xl overflow-hidden shadow-2xl shadow-black/50 overflow-x-auto">
+                    <table class="w-full min-w-[900px]">
+                        <thead class="bg-slate-900/60"><tr>${head}</tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>`;
 
-                        <div class="p-6 md:w-1/4 bg-${isProfitable ? 'emerald' : 'slate'}-900/10 flex flex-col justify-center items-end border-t md:border-t-0 md:border-l border-slate-800">
-                            <div class="text-xs text-slate-500 font-bold mb-1 uppercase">Net Profit</div>
-                            <div class="text-4xl font-mono font-bold ${profitColor} tracking-tighter">${opp.net}%</div>
-                            <div class="text-xs text-slate-500 mt-2 font-mono">
-                                Gross: ${opp.gross}% | Fees: -${opp.fees}%
+            area.innerHTML = errorOrEmpty(table) + `
+                <p class="text-[11px] text-slate-600 mt-3 font-mono">
+                    NET % = gross spread − taker fees (both venues) − transfer fee for $${p.capital.toLocaleString()} capital. Sorted by ${state.sortKey} ${state.sortDir === -1 ? 'descending' : 'ascending'}.
+                </p>`;
+
+            area.querySelectorAll('th.sortable').forEach((th) => {
+                th.addEventListener('click', () => {
+                    const key = th.dataset.sort;
+                    if (state.sortKey === key) state.sortDir *= -1;
+                    else { state.sortKey = key; state.sortDir = -1; }
+                    renderScanner();
+                });
+            });
+        }
+
+        // ── Tab 2: Listing Radar ─────────────────────────────────────────────
+        const STATUS_META = {
+            UPCOMING_COUNTDOWN: { label: 'UPCOMING LISTING', color: 'cyan', icon: 'fa-hourglass-half' },
+            NEWLY_LISTED_VOLATILITY: { label: 'NEWLY LISTED', color: 'amber', icon: 'fa-bolt' },
+            PRE_MARKET: { label: 'PRE-MARKET (DEX)', color: 'purple', icon: 'fa-flask' },
+        };
+
+        function renderListings() {
+            const area = $('contentArea');
+            const listings = state.data?.listingOpportunities || [];
+
+            if (!state.data && !state.lastError) {
+                area.innerHTML = emptyState('Waiting for first scan...', 'The listing radar monitors exchange announcements, fresh DEX pools and live cross-venue spreads.');
+                return;
+            }
+
+            const cards = listings.map((op, i) => {
+                const meta = STATUS_META[op.status] || STATUS_META.NEWLY_LISTED_VOLATILITY;
+                let countdownHtml = '';
+                if (op.status === 'UPCOMING_COUNTDOWN' && op.countdownSeconds > 0) {
+                    const expiry = Date.now() + op.countdownSeconds * 1000;
+                    state.countdowns.set(`cd-${i}`, expiry);
+                    countdownHtml = `<div class="mt-3 flex items-center gap-2 bg-dark border border-cyan-500/30 rounded-lg px-3 py-2">
+                        <i class="fa-solid fa-stopwatch text-cyan-400"></i>
+                        <span class="text-xs text-slate-400">Listing in</span>
+                        <span class="font-mono font-bold text-cyan-400 text-sm" id="cd-${i}">--:--:--</span>
+                    </div>`;
+                }
+                return `
+                <div class="bg-panel border border-slate-800 hover:border-slate-600 rounded-xl p-5 flex flex-col gap-3 transition-all">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <h3 class="font-bold text-white text-lg leading-none">${esc(op.token)}</h3>
+                                ${badge(meta.label, meta.color)}
+                                ${op.isHeuristic ? badge('HEURISTIC EST.', 'slate') : badge('LIVE DATA', 'green')}
                             </div>
+                            <div class="text-xs text-slate-500 mt-1.5">${esc(op.announcementTitle)}</div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <div class="text-[10px] text-slate-500 uppercase font-bold">Est. Profit</div>
+                            <div class="font-mono font-bold text-profit">$${op.estimatedProfitUSD.toFixed(2)}</div>
+                            <div class="text-[10px] text-slate-600 font-mono">+${op.potentialSpreadPct.toFixed(1)}%</div>
                         </div>
                     </div>
-                    <div class="bg-slate-950/50 px-6 py-2 border-t border-slate-800 flex justify-between items-center text-xs font-mono text-slate-500">
+
+                    <div class="grid grid-cols-3 gap-2 text-center bg-slate-900/40 rounded-lg p-3 border border-slate-800">
                         <div>
-                            Est. Profit on $1,000: <span class="text-white ml-1">$${(1000 * parseFloat(opp.net) / 100).toFixed(2)}</span>
+                            <div class="text-[10px] text-slate-500 uppercase font-bold mb-1">Buy On</div>
+                            <a href="${esc(op.buyUrl)}" target="_blank" rel="noopener" class="text-sm font-bold text-accent hover:underline">${esc(op.sourceExchange)}</a>
+                            <div class="font-mono text-xs text-slate-400">$${formatPrice(op.sourcePriceUSD)}</div>
                         </div>
-                        <div class="flex items-center gap-2">
-                             <i class="fa-solid fa-clock"></i> ${new Date(opp.timestamp).toLocaleTimeString()}
+                        <div class="flex flex-col items-center justify-center text-slate-600">
+                            <i class="fa-solid fa-arrow-right-long"></i>
+                            <div class="text-[9px] font-mono mt-1">${esc(op.recommendedNetwork.split(' (')[0])}</div>
+                            <div class="text-[9px] font-mono text-slate-500">$${op.transferFeeUSD.toFixed(2)}</div>
                         </div>
+                        <div>
+                            <div class="text-[10px] text-slate-500 uppercase font-bold mb-1">Sell On</div>
+                            <a href="${esc(op.targetTradeUrl)}" target="_blank" rel="noopener" class="text-sm font-bold text-accent hover:underline">${esc(op.targetExchange)}</a>
+                            <div class="font-mono text-xs text-slate-400">${op.expectedListingPriceUSD ? '$' + formatPrice(op.expectedListingPriceUSD) : 'open'}</div>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-slate-400 leading-relaxed">${esc(op.actionGuide)}</p>
+
+                    ${countdownHtml}
+
+                    <div class="flex justify-between items-center text-[10px] font-mono text-slate-600 mt-auto">
+                        <span>24h Vol: $${formatNumber(op.source24hVolumeUSD)}</span>
+                        ${op.announcementUrl ? `<a href="${esc(op.announcementUrl)}" target="_blank" rel="noopener" class="text-slate-500 hover:text-accent"><i class="fa-solid fa-up-right-from-square mr-1"></i>Announcement</a>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+
+            area.innerHTML = errorOrEmpty(
+                listings.length === 0
+                    ? emptyState('No listing events right now', 'The radar watches Bybit, Binance, OKX and KuCoin announcements plus fresh Solana/Base DEX pools.')
+                    : `<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">${cards}</div>
+                       <p class="text-[11px] text-slate-600 mt-3 font-mono"><i class="fa-solid fa-circle-info mr-1"></i>Entries marked HEURISTIC EST. use decay-model premium estimates — not guaranteed market moves. LIVE DATA entries are computed from current order books.</p>`
+            );
+        }
+
+        function emptyState(title, sub) {
+            return `<div class="text-center py-20 border border-dashed border-slate-800 rounded-2xl bg-slate-900/30">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-800 flex items-center justify-center text-slate-600">
+                    <i class="fa-solid fa-satellite-dish text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-300">${esc(title)}</h3>
+                <p class="text-slate-500 text-sm max-w-md mx-auto mt-2">${esc(sub)}</p>
+            </div>`;
+        }
+
+        // ── Tab 3: Funding Rates ─────────────────────────────────────────────
+        function renderFunding() {
+            const area = $('contentArea');
+            const rows = state.data?.fundingRateOpportunities || [];
+
+            if (!state.data && !state.lastError) {
+                area.innerHTML = emptyState('Waiting for first scan...', 'Funding-rate basis arbitrage from live Binance Futures premium index (880+ contracts).');
+                return;
+            }
+
+            const body = rows.map((f) => {
+                const carry = f.recommendedStrategy === 'CASH_AND_CARRY';
+                return `<tr class="border-t border-slate-800 hover:bg-slate-800/30 transition-colors">
+                    <td class="px-4 py-3 font-bold text-white font-mono text-sm">${esc(f.symbol)}</td>
+                    <td class="px-4 py-3 text-slate-300 text-sm">${esc(f.exchange)}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-slate-400">$${formatPrice(f.spotPrice)}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-slate-400">$${formatPrice(f.perpPrice)}</td>
+                    <td class="px-4 py-3 font-mono text-sm ${f.fundingRate8h >= 0 ? 'text-profit' : 'text-loss'}">${f.fundingRate8h >= 0 ? '+' : ''}${f.fundingRate8h.toFixed(4)}%</td>
+                    <td class="px-4 py-3 font-mono text-sm font-bold ${f.annualizedYieldAPR >= 0 ? 'text-profit' : 'text-loss'}">${f.annualizedYieldAPR >= 0 ? '+' : ''}${f.annualizedYieldAPR.toFixed(1)}%</td>
+                    <td class="px-4 py-3">${badge(carry ? 'CASH & CARRY' : 'REVERSE CARRY', carry ? 'green' : 'red')}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-slate-400">${esc(f.nextFundingIn)}</td>
+                </tr>`;
+            }).join('');
+
+            area.innerHTML = errorOrEmpty(
+                rows.length === 0
+                    ? emptyState('Funding data unavailable', 'Binance Futures premium index could not be reached from this region.')
+                    : `<div class="bg-panel border border-slate-800 rounded-2xl overflow-hidden shadow-2xl shadow-black/50 overflow-x-auto">
+                        <table class="w-full min-w-[800px]">
+                            <thead class="bg-slate-900/60"><tr>
+                                <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">Symbol</th>
+                                <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">Venue</th>
+                                <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">Spot</th>
+                                <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">Perp</th>
+                                <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">Funding / 8h</th>
+                                <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">APR</th>
+                                <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">Strategy</th>
+                                <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">Next Funding</th>
+                            </tr></thead>
+                            <tbody>${body}</tbody>
+                        </table>
+                    </div>
+                    <p class="text-[11px] text-slate-600 mt-3 font-mono">Cash &amp; carry: long spot + short perp when funding is positive → collect funding. Reverse when negative. APR = funding rate × 3 × 365.</p>`
+            );
+        }
+
+        // ── Tab 4: Coin Matrix ───────────────────────────────────────────────
+        function renderMatrix() {
+            const area = $('contentArea');
+            const coin = state.matrixCoin;
+
+            const searchHtml = `
+                <div class="bg-panel border border-slate-800 rounded-2xl p-4 mb-4 flex gap-3 items-center">
+                    <div class="relative flex-grow">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-500"></i>
+                        <input type="text" id="coinSearch" placeholder="Search a coin (BTC, SOL, PEPE, ...)"
+                            class="w-full bg-dark border border-slate-700 rounded-lg py-2.5 pl-11 pr-4 text-white font-mono focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all">
+                    </div>
+                    <button id="coinSearchBtn" class="px-6 py-2.5 bg-accent hover:bg-cyan-400 text-dark font-bold rounded-lg active:scale-95 transition-all whitespace-nowrap">
+                        <i class="fa-solid fa-table-cells mr-1.5"></i>LOAD MARKETS
+                    </button>
+                </div>`;
+
+            let resultHtml = '';
+            if (state.matrixLoading) {
+                resultHtml = `<div class="text-center py-16 animate-pulse">
+                    <div class="text-accent text-xl mb-2 font-mono">LOADING DEEP MARKET DATA...</div>
+                    <p class="text-slate-500 text-sm">Querying CoinGecko market matrix</p>
+                </div>`;
+            } else if (state.matrixError) {
+                resultHtml = `<div class="p-8 bg-red-900/20 border border-red-900/50 rounded-xl text-center text-red-400">
+                    <div class="font-bold mb-1">Could not load coin</div>
+                    <div class="text-sm text-red-400/70">${esc(state.matrixError)}</div>
+                </div>`;
+            } else if (coin && coin.success) {
+                const info = coin.coinInfo;
+                const route = coin.bestArbitrageRoute;
+                const rows = coin.markets.slice(0, 50).map((m) => `
+                    <tr class="border-t border-slate-800 hover:bg-slate-800/30 transition-colors">
+                        <td class="px-4 py-2.5 text-sm font-bold text-white">${esc(m.exchangeName)} ${m.isDEX ? badge('DEX', 'purple') : ''}</td>
+                        <td class="px-4 py-2.5 font-mono text-xs text-slate-400">${esc(m.pair)}</td>
+                        <td class="px-4 py-2.5 font-mono text-sm text-white">$${formatPrice(m.priceUSD)}</td>
+                        <td class="px-4 py-2.5 font-mono text-xs ${m.spreadPctVsVwap >= 0 ? 'text-profit' : 'text-loss'}">${m.spreadPctVsVwap >= 0 ? '+' : ''}${m.spreadPctVsVwap.toFixed(2)}%</td>
+                        <td class="px-4 py-2.5 font-mono text-xs text-slate-400">${m.bidAskSpreadPct.toFixed(2)}%</td>
+                        <td class="px-4 py-2.5 font-mono text-xs text-slate-400">$${formatNumber(m.volume24hUSD)}</td>
+                        <td class="px-4 py-2.5">${m.tradeUrl ? `<a href="${esc(m.tradeUrl)}" target="_blank" rel="noopener" class="text-accent hover:underline text-xs font-mono">TRADE <i class="fa-solid fa-up-right-from-square"></i></a>` : '<span class="text-slate-600 text-xs">—</span>'}</td>
+                    </tr>`).join('');
+
+                resultHtml = `
+                <div class="bg-panel border border-slate-800 rounded-2xl p-5 mb-4 flex flex-col md:flex-row gap-4 md:items-center">
+                    ${info.image ? `<img src="${esc(info.image)}" alt="${esc(info.name)}" class="w-12 h-12 rounded-full">` : ''}
+                    <div class="flex-grow">
+                        <h3 class="text-xl font-bold text-white">${esc(info.name)} <span class="text-slate-500 font-mono text-sm">${esc(info.symbol)}</span></h3>
+                        <div class="text-xs text-slate-500 font-mono mt-1">
+                            VWAP $${formatPrice(info.vwapUSD)} • ${info.marketsCount} markets • ${info.cexMarketsCount} CEX / ${info.dexMarketsCount} DEX • Max spread ${info.maxSpreadPct}%
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] text-slate-500 uppercase font-bold">Total 24h Volume</div>
+                        <div class="font-mono font-bold text-white">$${formatNumber(info.totalVolume24hUSD)}</div>
                     </div>
                 </div>
-                `;
-            }).join('');
+                ${route ? `
+                <div class="bg-gradient-to-r from-emerald-500/10 to-transparent border border-emerald-500/30 rounded-xl p-4 mb-4 flex flex-col md:flex-row md:items-center gap-3">
+                    <div class="flex-grow">
+                        <div class="text-[10px] text-emerald-400 font-bold uppercase mb-1">Best Cross-Venue Route</div>
+                        <div class="flex items-center gap-3 flex-wrap font-mono text-sm">
+                            <span class="text-white">Buy ${esc(route.buyExchange)} <span class="text-accent">$${formatPrice(route.buyPrice)}</span></span>
+                            <i class="fa-solid fa-arrow-right-long text-slate-600"></i>
+                            <span class="text-white">Sell ${esc(route.sellExchange)} <span class="text-accent">$${formatPrice(route.sellPrice)}</span></span>
+                        </div>
+                        <div class="text-[11px] text-slate-500 font-mono mt-1">${esc(route.recommendedNetwork)} • fee $${route.transferFeeUSD.toFixed(2)} • ${esc(route.transferTimeEst)} ${route.isDEXInvolved ? '• DEX involved' : ''}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-mono text-2xl font-bold text-profit">+${route.netSpreadPct.toFixed(2)}%</div>
+                        <div class="text-xs text-slate-500 font-mono">$${route.estimatedProfitUSD.toFixed(2)} on $${route.capitalUSD.toLocaleString()}</div>
+                    </div>
+                </div>` : ''}
+                <div class="bg-panel border border-slate-800 rounded-2xl overflow-hidden shadow-2xl shadow-black/50 overflow-x-auto">
+                    <table class="w-full min-w-[760px]">
+                        <thead class="bg-slate-900/60"><tr>
+                            <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">Exchange</th>
+                            <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">Pair</th>
+                            <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">Price</th>
+                            <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">vs VWAP</th>
+                            <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">Bid/Ask Spread</th>
+                            <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">24h Volume</th>
+                            <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">Trade</th>
+                        </tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>`;
+            } else if (coin && !coin.success) {
+                resultHtml = emptyState('Coin not found', 'Try a different symbol, e.g. BTC, SOL, PEPE.');
+            } else {
+                resultHtml = emptyState('Search a coin to inspect its markets', 'Deep market matrix with VWAP spreads, CEX/DEX badges, depth and trade links — powered by CoinGecko.');
+            }
+
+            area.innerHTML = searchHtml + resultHtml;
+
+            const runSearch = () => {
+                const v = $('coinSearch').value.trim();
+                if (v) fetchCoinMatrix(v);
+            };
+            $('coinSearchBtn').addEventListener('click', runSearch);
+            $('coinSearch').addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
+            if (state.matrixCoin) $('coinSearch').value = state.matrixCoin.coinInfo.symbol;
         }
 
-        function updateStats() {
-            document.getElementById('opportunitiesCount').textContent = opportunities.length;
-            document.getElementById('coinsTracked').textContent = Object.keys(livePrices).length;
-            document.getElementById('apiCalls').textContent = apiCallCount;
-            document.getElementById('bestSpread').textContent = opportunities.length > 0 ? opportunities[0].net + '%' : '0%';
-            document.getElementById('lastUpdate').textContent = lastUpdateTime ? lastUpdateTime.toLocaleTimeString() : '--:--';
+        // ── Countdown ticker (1s) ────────────────────────────────────────────
+        setInterval(() => {
+            const now = Date.now();
+            for (const [id, expiry] of state.countdowns) {
+                const el = $(id);
+                if (!el) { state.countdowns.delete(id); continue; }
+                const remain = Math.max(0, Math.floor((expiry - now) / 1000));
+                const h = Math.floor(remain / 3600), m = Math.floor((remain % 3600) / 60), s = remain % 60;
+                el.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
+            // next auto-refresh countdown in the LIVE badge
+            if (nextFetchAt) {
+                const remain = Math.max(0, Math.ceil((nextFetchAt - now) / 1000));
+                $('liveLabel').textContent = `LIVE • ${remain}s`;
+            } else {
+                $('liveLabel').textContent = 'LIVE';
+            }
+        }, 1000);
+
+        // ── Auto-refresh scheduling ──────────────────────────────────────────
+        function schedulePolling() {
+            if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+            const mode = $('refreshRate').value;
+            if (mode === 'off') { nextFetchAt = null; return; }
+            const ms = parseInt(mode) * 1000;
+            pollTimer = setInterval(() => {
+                if (document.hidden) return;                     // pause when tab not visible
+                if (Date.now() - lastInteraction > IDLE_STOP_MS) return; // pause when idle
+                fetchScan();
+            }, ms);
         }
 
-        console.log('🚀 Arbitrage Terminal Loaded - Safe Mode');
+        ['click', 'keydown', 'change', 'input'].forEach((evt) =>
+            document.addEventListener(evt, () => { lastInteraction = Date.now(); }, { passive: true })
+        );
+
+        // ── Wiring ───────────────────────────────────────────────────────────
+        document.querySelectorAll('.tab-btn').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+        $('scanBtn').addEventListener('click', fetchScan);
+        $('refreshRate').addEventListener('change', schedulePolling);
+
+        let filterDebounce = null;
+        ['minSpread', 'capital', 'volumeFilter'].forEach((id) => {
+            $(id).addEventListener('change', () => {
+                clearTimeout(filterDebounce);
+                filterDebounce = setTimeout(fetchScan, 600);
+            });
+        });
+
+        // Initial load: fetch immediately
+        fetchScan().then(schedulePolling);
+
+        console.log('%c🚀 Arbitrage Terminal v3 — real bid/ask engine, 8 exchanges', 'color:#06b6d4');
     </script>
 </body>
 </html>

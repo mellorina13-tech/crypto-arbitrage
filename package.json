@@ -1,7 +1,10 @@
 {
   "name": "crypto-arbitrage-scanner",
-  "version": "1.0.0",
-  "description": "Crypto arbitrage scanner with real exchange data",
+  "version": "3.0.0",
+  "description": "Crypto arbitrage terminal: live executable bid/ask spreads across 8 exchanges, listing radar, funding rates and coin market matrix",
+  "scripts": {
+    "dev": "node scripts/dev-server.mjs"
+  },
   "dependencies": {
     "node-fetch": "^2.6.7"
   }
