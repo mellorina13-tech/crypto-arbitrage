@@ -510,11 +510,11 @@
                         <div class="text-[10px] text-slate-500 font-mono">Vol ${'$' + formatNumber(o.volume24hUSD)}</div>
                     </td>
                     <td class="px-4 py-3">
-                        <div class="text-white text-sm font-bold">${esc(o.buyExchange)}</div>
+                        <a href="${esc(o.buyUrl)}" target="_blank" rel="noopener" title="Open ${esc(o.baseAsset)}/USDT on ${esc(o.buyExchange)}" class="text-white text-sm font-bold hover:text-accent transition-colors">${esc(o.buyExchange)} <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-slate-600"></i></a>
                         <div class="font-mono text-accent text-xs">$${formatPrice(o.buyAsk)}</div>
                     </td>
                     <td class="px-4 py-3">
-                        <div class="text-white text-sm font-bold">${esc(o.sellExchange)}</div>
+                        <a href="${esc(o.sellUrl)}" target="_blank" rel="noopener" title="Open ${esc(o.baseAsset)}/USDT on ${esc(o.sellExchange)}" class="text-white text-sm font-bold hover:text-accent transition-colors">${esc(o.sellExchange)} <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-slate-600"></i></a>
                         <div class="font-mono text-accent text-xs">$${formatPrice(o.sellBid)}</div>
                     </td>
                     <td class="px-4 py-3 font-mono text-sm text-slate-300">${o.grossSpreadPct.toFixed(2)}%</td>
